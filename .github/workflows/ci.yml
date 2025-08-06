@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Bazel
+      uses: bazelbuild/setup-bazelisk@v3
+
+    - name: Cache Bazel
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/bazel
+        key: ${{ runner.os }}-bazel-${{ hashFiles('.bazelversion', '.bazelrc', 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel') }}
+        restore-keys: |
+          ${{ runner.os }}-bazel-
+
+    - name: Install Go tools for formatting
+      run: |
+        go install golang.org/x/tools/cmd/goimports@latest
+
+    - name: Format check - Go
+      run: bazel run //tools:goimports_check
+
+    - name: Format check - Python (black)
+      run: bazel run //tools:black_check
+
+    - name: Format check - Python (isort)
+      run: bazel run //tools:isort_check
+
+    - name: Build all targets
+      run: bazel build //...
+
+    - name: Run all tests
+      run: bazel test //src/...

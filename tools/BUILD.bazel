@@ -1,0 +1,32 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@scip_lsp_pip_deps//:requirements.bzl", "requirement")
+
+# Go formatting and linting
+sh_binary(
+    name = "goimports_check",
+    srcs = ["goimports_check.sh"],
+    data = ["@rules_go//go"],
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "goimports_fix",
+    srcs = ["goimports_fix.sh"],
+    data = ["@rules_go//go"],
+    visibility = ["//visibility:public"],
+)
+
+# Python formatting and linting
+py_binary(
+    name = "black_check",
+    srcs = ["black_check.py"],
+    deps = [requirement("black")],
+    visibility = ["//visibility:public"],
+)
+
+py_binary(
+    name = "black_fix",
+    srcs = ["black_fix.py"],
+    deps = [requirement("black")],
+    visibility = ["//visibility:public"],
+)
