@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements.lock requirements.txt
 #
---index-url http://artifactory.uber.internal:4587/artifactory/api/pypi/pypi/simple/
---trusted-host artifactory.uber.internal
 
 black==25.1.0
     # via -r requirements.txt
