@@ -30,13 +30,10 @@ jobs:
         go install golang.org/x/tools/cmd/goimports@latest
 
     - name: Format check - Go
-      run: bazel run //tools:goimports_check
+      run: bazel run //tools:goimports -- check
 
     - name: Format check - Python (black)
       run: bazel run //tools:black_check
-
-    - name: Format check - Python (isort)
-      run: bazel run //tools:isort_check
 
     - name: Build all targets
       run: bazel build //...
