@@ -1,10 +1,10 @@
 # scip-lsp
 
-A Java project built with Bazel (using Bzlmod) that implements a SCIP aggregator for Java code intelligence.
+A language agnostic language server that uses [SCIP]{github.com/sourcegraph/scip} as it's index source. Built with Bazel for Bazel.
 
 ## Overview
 
-This project provides a Java implementation for generating SCIP (Source Code Intelligence Protocol) indices for Java codebases. It helps Sourcegraph provide precise code navigation, references, and hover documentation for Java projects.
+This project includes a Go based Language Server that handles ingesting SCIP files, as well as a SCIP generator for Bazel.
 
 ## Prerequisites
 
