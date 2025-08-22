@@ -61,7 +61,7 @@ def execute_query(
     )
 
     cmd = [
-        "bazel",
+        "bazelisk",
         "query",
         "--output",
         "streamed_jsonproto",
