@@ -59,7 +59,7 @@ type MonorepoName string
 // Identifier for each monorepo.
 const (
 	MonorepoNameGoCode MonorepoName = "go-code"
-	MonorepoNameJava   MonorepoName = "lm/fievel"
+	MonorepoNameJava   MonorepoName = "stripe-internal/zoolander"
 )
 
 // MonorepoConfigs contain the config entries that differ between monorepos
@@ -73,6 +73,7 @@ type MonorepoConfigEntry struct {
 	ProjectViewPaths     []string          `yaml:"projectViewPaths"`
 	BSPVersionOverride   string            `yaml:"bspVersionOverride"`
 	Formatters           []FormatterConfig `yaml:"formatters"`
+	Languages            []string          `yaml:"languages"`
 	BuildEnvOverrides    []string          `yaml:"buildEnvOverrides"`
 	RegistryFeatureFlags map[string]bool   `yaml:"registryFeatureFlags"`
 }
