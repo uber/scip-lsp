@@ -1,0 +1,8 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["helpers.go"],
+    importpath = "github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers",
+    visibility = ["//src/ulsp:__subpackages__"],
+)
