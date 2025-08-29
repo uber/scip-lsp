@@ -38,6 +38,8 @@ go_test(
         "//src/ulsp/factory:go_default_library",
         "//src/ulsp/gateway/ide-client:go_ideclient_gomock_library",
         "//src/ulsp/internal/executor:go_loader_gomock_library",
+        "//src/ulsp/internal/fs:go_fs_gomock_library",
+        "//src/ulsp/internal/fs/fsmock/helpers:go_default_library",
         "//src/ulsp/mapper:go_default_library",
         "//src/ulsp/repository/session:go_repository_gomock_library",
         "@com_github_stretchr_testify//assert:go_default_library",

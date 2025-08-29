@@ -16,7 +16,10 @@ go_test(
     srcs = ["utils_test.go"],
     embed = [":go_default_library"],
     deps = [
+        "//src/ulsp/internal/fs:go_fs_gomock_library",
+        "//src/ulsp/internal/fs/fsmock/helpers:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
         "@dev_lsp_go_protocol//:go_default_library",
+        "@org_uber_go_mock//gomock:go_default_library",
     ],
 )
