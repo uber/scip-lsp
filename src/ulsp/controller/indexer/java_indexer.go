@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 	"io"
 	"os/exec"
 	"path"
@@ -26,16 +27,18 @@ type javaIndexer struct {
 	path         string
 	session      *entity.Session
 	outputWriter io.Writer
+	fs           fs.UlspFS
 }
 
 // NewJavaIndexer return a new java indexer
-func NewJavaIndexer(s *entity.Session, outputWriter io.Writer) Indexer {
+func NewJavaIndexer(fs fs.UlspFS, s *entity.Session, outputWriter io.Writer) Indexer {
 	indexerPath := path.Join(s.WorkspaceRoot, _javaIndexerRelativePath)
 
 	return &javaIndexer{
 		session:      s,
 		path:         indexerPath,
 		outputWriter: outputWriter,
+		fs:           fs,
 	}
 }
 
@@ -73,7 +76,7 @@ func (j *javaIndexer) IsRelevantDocument(document protocol.TextDocumentItem) boo
 // GetUniqueIndexKey returns a unique key for the document,
 // this will be used to determine if additional relevant indexing is in progress for this document
 func (j *javaIndexer) GetUniqueIndexKey(document protocol.TextDocumentItem) (string, error) {
-	target, err := javautils.GetJavaTarget(j.session.WorkspaceRoot, document.URI)
+	target, err := javautils.GetJavaTarget(j.fs, j.session.WorkspaceRoot, document.URI)
 	if err != nil {
 		return "", err
 	}

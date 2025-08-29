@@ -18,6 +18,7 @@ go_library(
         "//src/ulsp/gateway/ide-client:go_default_library",
         "//src/ulsp/internal/errors:go_default_library",
         "//src/ulsp/internal/executor:go_default_library",
+        "//src/ulsp/internal/fs:go_default_library",
         "//src/ulsp/mapper:go_default_library",
         "//src/ulsp/repository/session:go_default_library",
         "@com_github_gofrs_uuid//:go_default_library",

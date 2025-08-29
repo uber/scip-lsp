@@ -10,6 +10,7 @@ go_library(
         "//src/ulsp/entity:go_default_library",
         "//src/ulsp/gateway/ide-client:go_default_library",
         "//src/ulsp/internal/executor:go_default_library",
+        "//src/ulsp/internal/fs:go_default_library",
         "//src/ulsp/repository/session:go_default_library",
         "@dev_lsp_go_protocol//:go_default_library",
     ],

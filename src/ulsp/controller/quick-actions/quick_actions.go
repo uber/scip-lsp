@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -45,6 +46,7 @@ type Params struct {
 	IdeGateway ideclient.Gateway
 	Sessions   session.Repository
 	Logger     *zap.SugaredLogger
+	FS         fs.UlspFS
 }
 
 // Controller defines the methods that this controller provides.
@@ -64,6 +66,7 @@ type controller struct {
 	ideGateway          ideclient.Gateway
 	sessions            session.Repository
 	logger              *zap.SugaredLogger
+	fs                  fs.UlspFS
 }
 
 // New creates a new controller for quick hints.
@@ -74,6 +77,7 @@ func New(p Params) Controller {
 		sessions:   p.Sessions,
 		executor:   p.Executor,
 		logger:     p.Logger.With("plugin", _nameKey),
+		fs:         p.FS,
 
 		currentActionRanges: newActionRangeStore(),
 		enabledActions:      make(map[uuid.UUID][]action.Action),
@@ -261,6 +265,7 @@ func (c *controller) executeCommand(ctx context.Context, params *protocol.Execut
 			Executor:      c.executor,
 			IdeGateway:    c.ideGateway,
 			ProgressToken: progressToken,
+			FileSystem:    c.fs,
 		}
 
 		progressInfoParams, err := currentAction.ProvideWorkDoneProgressParams(ctx, params, args)

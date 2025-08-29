@@ -172,7 +172,7 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 				return fmt.Errorf("setting up log file: %w", err)
 			}
 		}
-		c.indexer[s.UUID] = NewJavaIndexer(s, c.indexerOutputWriter)
+		c.indexer[s.UUID] = NewJavaIndexer(c.outputWriterParams.FS, s, c.indexerOutputWriter)
 	}
 	return nil
 }
