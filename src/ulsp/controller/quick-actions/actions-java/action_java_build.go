@@ -62,7 +62,7 @@ func (a *ActionJavaBuild) Execute(ctx context.Context, params *action.ExecutePar
 	if err != nil {
 		return fmt.Errorf("getting writer: %w", err)
 	}
-	target, err := javautils.GetJavaTarget(s.WorkspaceRoot, resultArgs.Document.URI)
+	target, err := javautils.GetJavaTarget(params.FileSystem, s.WorkspaceRoot, resultArgs.Document.URI)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (a *ActionJavaBuild) ProvideWorkDoneProgressParams(ctx context.Context, par
 	}
 
 	file := path.Base(resultArgs.Document.URI.Filename())
-	target, err := javautils.GetJavaTarget(s.WorkspaceRoot, resultArgs.Document.URI)
+	target, err := javautils.GetJavaTarget(params.FileSystem, s.WorkspaceRoot, resultArgs.Document.URI)
 	if err != nil {
 		return nil, err
 	}

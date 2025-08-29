@@ -58,7 +58,7 @@ func (a *ActionJavaTestRun) Execute(ctx context.Context, params *action.ExecuteP
 	}
 
 	testCaseName := a.getTestCaseName(resultArgs)
-	target, err := javautils.GetJavaTarget(s.WorkspaceRoot, resultArgs.Document.URI)
+	target, err := javautils.GetJavaTarget(params.FileSystem, s.WorkspaceRoot, resultArgs.Document.URI)
 	if err != nil {
 		return err
 	}

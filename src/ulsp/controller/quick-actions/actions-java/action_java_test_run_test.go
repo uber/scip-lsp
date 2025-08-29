@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,8 +21,8 @@ import (
 )
 
 func TestJavaTestRunExecute(t *testing.T) {
-	ctx := context.Background()
 	ctrl := gomock.NewController(t)
+	ctx := context.Background()
 	a := ActionJavaTestRun{}
 
 	sessionRepository := repositorymock.NewMockRepository(ctrl)
@@ -37,10 +40,17 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/roadrunner/application-dw").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(9).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		var writer bytes.Buffer
@@ -56,10 +66,16 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("bad args", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Times(0).Return(true, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(0).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 		assert.Error(t, a.Execute(ctx, c, []byte(`{"brokenJSON`)))
@@ -68,10 +84,17 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("log message failure", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/roadrunner/application-dw").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(9).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		var writer bytes.Buffer
@@ -85,10 +108,17 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("show message failure", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/roadrunner/application-dw").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(9).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		var writer bytes.Buffer
@@ -104,10 +134,16 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("writer failure", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Times(0).Return(true, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(0).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
@@ -118,21 +154,27 @@ func TestJavaTestRunExecute(t *testing.T) {
 	t.Run("execution failure", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/roadrunner/application-dw").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(9).Return([]os.DirEntry{}, nil)
+
 		c := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		var writer bytes.Buffer
 		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
-		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).Return(nil).Times(2)
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 		executorMock.EXPECT().RunCommand(gomock.Any(), gomock.Any()).Return(errors.New("error"))
 
 		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/roadrunner/application-dw/src/test/java/com/uber/roadrunner/application/exception/GatewayErrorExceptionMapperTest.java"}}`)))
 	})
-
 }
 
 func TestJavaTestRunProcessDocument(t *testing.T) {

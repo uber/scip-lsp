@@ -9,18 +9,17 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
-
 # Python formatting and linting
 py_binary(
     name = "black_check",
     srcs = ["black_check.py"],
-    deps = [requirement("black")],
     visibility = ["//visibility:public"],
+    deps = [requirement("black")],
 )
 
 py_binary(
     name = "black_fix",
     srcs = ["black_fix.py"],
-    deps = [requirement("black")],
     visibility = ["//visibility:public"],
+    deps = [requirement("black")],
 )

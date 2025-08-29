@@ -3,6 +3,7 @@ package quickactions
 import (
 	"context"
 	"encoding/json"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	ideclient "github.com/uber/scip-lsp/src/ulsp/gateway/ide-client"
@@ -25,6 +26,7 @@ type ExecuteParams struct {
 	IdeGateway    ideclient.Gateway
 	Executor      executor.Executor
 	ProgressToken *protocol.ProgressToken
+	FileSystem    fs.UlspFS
 }
 
 // ProgressInfoParams provides parameters for display during progress of action in status bar
