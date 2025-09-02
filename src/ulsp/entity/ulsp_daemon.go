@@ -60,12 +60,6 @@ type TextDocumentIdenfitierWithSession struct {
 // MonorepoName for supported Uber monorepos.
 type MonorepoName string
 
-// Identifier for each monorepo.
-const (
-	MonorepoNameGoCode MonorepoName = "go-code"
-	MonorepoNameJava   MonorepoName = "stripe-internal/zoolander"
-)
-
 // MonorepoConfigs contain the config entries that differ between monorepos
 type MonorepoConfigs map[MonorepoName]MonorepoConfigEntry
 
