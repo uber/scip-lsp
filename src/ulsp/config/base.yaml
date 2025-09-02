@@ -47,7 +47,9 @@ monorepos:
       loadFromDirectories: true
       # Uncomment below as needed to enable language-specific language features for this repository
       # languages:
+      #   - go
       #   - java
+      #   - scala
       directories:
         - '.scip'
 
