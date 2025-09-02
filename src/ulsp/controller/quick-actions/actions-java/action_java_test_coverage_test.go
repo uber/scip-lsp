@@ -36,7 +36,7 @@ func TestJavaTestRunCoverageExecute(t *testing.T) {
 		},
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	t.Run("success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
@@ -240,10 +240,12 @@ func TestJavaTestRunCoverageShouldEnable(t *testing.T) {
 	s := entity.Session{
 		UUID: factory.UUID(),
 	}
-	assert.False(t, a.ShouldEnable(&s))
+	mce := entity.MonorepoConfigEntry{}
 
-	s.Monorepo = entity.MonorepoNameJava
-	assert.True(t, a.ShouldEnable(&s))
+	assert.False(t, a.ShouldEnable(&s, mce))
+
+	mce.Languages = []string{"java"}
+	assert.True(t, a.ShouldEnable(&s, mce))
 }
 
 func TestJavaTestRunCoverageIsRelevantDocument(t *testing.T) {

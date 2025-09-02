@@ -22,6 +22,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const _monorepoNameGoCode entity.MonorepoName = "go-code"
+
 var _sampleRegex = regexp.MustCompile("sampleRegex")
 
 func TestNew(t *testing.T) {
@@ -44,23 +46,33 @@ func TestInitialize(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name     string
-		monorepo entity.MonorepoName
-		client   string
+		name          string
+		monorepo      entity.MonorepoName
+		monorepoEntry entity.MonorepoConfigEntry
+		client        string
 	}{
 		{
 			name:     "go",
-			monorepo: entity.MonorepoNameGoCode,
+			monorepo: "go-code",
+			monorepoEntry: entity.MonorepoConfigEntry{
+				Languages: []string{"go"},
+			},
 		},
 		{
 			name:     "java vs code",
-			monorepo: entity.MonorepoNameJava,
-			client:   "Visual Studio Code",
+			monorepo: "lm/fievel",
+			monorepoEntry: entity.MonorepoConfigEntry{
+				Languages: []string{"java"},
+			},
+			client: "Visual Studio Code",
 		},
 		{
 			name:     "java other",
-			monorepo: entity.MonorepoNameJava,
-			client:   "other",
+			monorepo: "lm/fievel",
+			monorepoEntry: entity.MonorepoConfigEntry{
+				Languages: []string{"go"},
+			},
+			client: "other",
 		},
 	}
 
@@ -86,7 +98,7 @@ func TestInitialize(t *testing.T) {
 			assert.Equal(t, result.Capabilities.CodeActionProvider, &protocol.CodeActionOptions{CodeActionKinds: []protocol.CodeActionKind{_codeActionKind}})
 
 			for _, a := range allActions {
-				if a.ShouldEnable(s) {
+				if a.ShouldEnable(s, tt.monorepoEntry) {
 					assert.Contains(t, c.enabledActions[s.UUID], a)
 				} else {
 					assert.NotContains(t, c.enabledActions[s.UUID], a)
@@ -111,7 +123,7 @@ func TestInitialize(t *testing.T) {
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameGoCode
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		c := controller{
@@ -132,7 +144,7 @@ func TestInitialize(t *testing.T) {
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameGoCode
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 		c := controller{
@@ -159,7 +171,7 @@ func TestRefreshAvailableCodeActions(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -275,7 +287,7 @@ func TestDidOpen(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -307,7 +319,7 @@ func TestDidSave(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -339,7 +351,7 @@ func TestDidClose(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	c := controller{
@@ -388,7 +400,7 @@ func TestCodeAction(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -487,7 +499,7 @@ func TestCodeLens(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -571,7 +583,7 @@ func TestExecuteCommand(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	action1 := quickactionmock.NewMockAction(ctrl)

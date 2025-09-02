@@ -36,7 +36,7 @@ func TestJavaBuildExecute(t *testing.T) {
 		},
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	t.Run("success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
@@ -166,7 +166,7 @@ func TestJavaBuildProvideWorkDoneProgressParams(t *testing.T) {
 		},
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	t.Run("Success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
@@ -210,11 +210,12 @@ func TestJavaBuildShouldEnable(t *testing.T) {
 			},
 		},
 	}
+	mce := entity.MonorepoConfigEntry{}
 
-	assert.False(t, a.ShouldEnable(s))
+	assert.False(t, a.ShouldEnable(s, mce))
 
 	s.InitializeParams.ClientInfo.Name = string(entity.ClientNameVSCode)
-	assert.False(t, a.ShouldEnable(s))
+	assert.False(t, a.ShouldEnable(s, mce))
 }
 
 func TestJavaBuildIsRelevantDocument(t *testing.T) {

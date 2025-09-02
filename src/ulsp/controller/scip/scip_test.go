@@ -35,6 +35,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const _monorepoNameJava entity.MonorepoName = "lm/fievel"
+
 type mockDirEntry struct {
 	name string
 }
@@ -98,7 +100,7 @@ func TestStartupInfo(t *testing.T) {
 func TestInitialize(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+	sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 	s := &entity.Session{
 		UUID:     factory.UUID(),
 		Monorepo: "_default",
@@ -159,7 +161,7 @@ func TestInitialize(t *testing.T) {
 		regMock := NewMockRegistry(ctrl)
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 
-		c := newScipCtl(fsMock, regMock, entity.MonorepoNameGoCode, false, false, true)
+		c := newScipCtl(fsMock, regMock, _monorepoNameJava, false, false, true)
 
 		err := c.initialize(ctx, &protocol.InitializeParams{}, &protocol.InitializeResult{})
 		assert.NoError(t, err)
@@ -354,7 +356,7 @@ func TestInitialize(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		fsMock := fsmock.NewMockUlspFS(ctrl)
-		c := newScipCtl(fsMock, nil, entity.MonorepoNameJava, true, false, true)
+		c := newScipCtl(fsMock, nil, "lm/fievel", true, false, true)
 
 		err := c.initialize(ctx, &protocol.InitializeParams{}, &protocol.InitializeResult{})
 		assert.NoError(t, err)
@@ -1376,7 +1378,7 @@ func TestIndexReloading(t *testing.T) {
 		})
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			done <- true
@@ -1444,7 +1446,7 @@ func TestIndexReloading(t *testing.T) {
 		}).MinTimes(1).MaxTimes(2)
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			done <- true
@@ -1501,7 +1503,7 @@ func TestIndexReloading(t *testing.T) {
 		closer := make(chan bool, 1)
 
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any())
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			done <- true
@@ -1543,13 +1545,13 @@ func TestIndexReloading(t *testing.T) {
 		documents := docsyncmock.NewMockController(ctrl)
 		documents.EXPECT().ResetBase(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		dir := t.TempDir()
@@ -1591,7 +1593,7 @@ func TestIndexReloading(t *testing.T) {
 			cb = callback
 		})
 
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			assert.NotEmpty(t, notChan)
@@ -1620,13 +1622,13 @@ func TestHandleChangesErrorConfig(t *testing.T) {
 
 	mockFs := fsmock.NewMockUlspFS(ctrl)
 	mockReg := NewMockRegistry(ctrl)
-	sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+	sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 	sessionRepository := repositorymock.NewMockRepository(ctrl)
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = sampleWorkspaceRoot
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameJava
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	dir := t.TempDir()
@@ -1669,13 +1671,13 @@ func TestHandleChangesErrorSessionsObject(t *testing.T) {
 
 	mockFs := fsmock.NewMockUlspFS(ctrl)
 	mockReg := NewMockRegistry(ctrl)
-	sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+	sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 	sessionRepository := repositorymock.NewMockRepository(ctrl)
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = sampleWorkspaceRoot
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameJava
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(nil, errors.New("whoops")).AnyTimes()
 
 	dir := t.TempDir()
@@ -1718,13 +1720,13 @@ func TestNotifier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		fsMock := fsmock.NewMockUlspFS(ctrl)
@@ -1764,13 +1766,13 @@ func TestNotifier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		regMock := NewMockRegistry(ctrl)
@@ -1821,7 +1823,7 @@ func TestNotifier(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
@@ -1897,13 +1899,13 @@ func TestNotifier(t *testing.T) {
 		documents := docsyncmock.NewMockController(ctrl)
 		documents.EXPECT().ResetBase(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 
 		dir := t.TempDir()
 		w, err := fsnotify.NewWatcher()
@@ -1944,7 +1946,7 @@ func TestNotifier(t *testing.T) {
 			cb = callback
 		})
 
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			assert.NotEmpty(t, notChan)
@@ -2010,13 +2012,13 @@ func TestNotifier(t *testing.T) {
 		documents := docsyncmock.NewMockController(ctrl)
 		documents.EXPECT().ResetBase(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-		sampleWorkspaceRoot := path.Join("/sample/home/", string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 		sessionRepository := repositorymock.NewMockRepository(ctrl)
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		dir := t.TempDir()
@@ -2059,7 +2061,7 @@ func TestNotifier(t *testing.T) {
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any()).DoAndReturn(func(callback func(*model.Document)) {
 			cb = callback
 		})
-		c.registries[dir] = c.createNewScipRegistry(dir, entity.MonorepoNameGoCode)
+		c.registries[dir] = c.createNewScipRegistry(dir, _monorepoNameJava)
 		go func() {
 			c.handleChanges(closer)
 			assert.NotEmpty(t, notChan)
@@ -2090,12 +2092,12 @@ func TestGetSha(t *testing.T) {
 		mockReg := NewMockRegistry(ctrl)
 
 		dir := t.TempDir()
-		sampleWorkspaceRoot := path.Join(dir, string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join(dir, string(_monorepoNameJava))
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 
 		c := &controller{
 			configs: map[entity.MonorepoName]entity.MonorepoConfigEntry{"_default": {
@@ -2131,12 +2133,12 @@ func TestGetSha(t *testing.T) {
 		mockReg := NewMockRegistry(ctrl)
 
 		dir := t.TempDir()
-		sampleWorkspaceRoot := path.Join(dir, string(entity.MonorepoNameGoCode))
+		sampleWorkspaceRoot := path.Join(dir, string(_monorepoNameJava))
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
 		s.WorkspaceRoot = sampleWorkspaceRoot
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameJava
 
 		c := &controller{
 			configs: map[entity.MonorepoName]entity.MonorepoConfigEntry{"_default": {

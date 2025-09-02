@@ -35,7 +35,7 @@ func TestStartupInfo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, info.Validate())
 	assert.Equal(t, _nameKey, info.NameKey)
-	assert.Contains(t, info.RelevantRepos, entity.MonorepoNameJava)
+	assert.Contains(t, info.RelevantRepos, "lm/fievel")
 }
 
 func TestInitialized(t *testing.T) {

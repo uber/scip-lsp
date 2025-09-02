@@ -25,7 +25,7 @@ func TestJavaTestExplorerInfoExecute(t *testing.T) {
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	executorMock := executormock.NewMockExecutor(ctrl)
 	ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
@@ -111,14 +111,15 @@ func TestJavaTestExplorerInfoShouldEnable(t *testing.T) {
 			},
 		},
 	}
+	mce := entity.MonorepoConfigEntry{}
 
-	assert.False(t, a.ShouldEnable(s))
+	assert.False(t, a.ShouldEnable(s, mce))
 
-	s.Monorepo = entity.MonorepoNameJava
-	assert.False(t, a.ShouldEnable(s))
+	mce.Languages = []string{"java"}
+	assert.False(t, a.ShouldEnable(s, mce))
 
 	s.InitializeParams.ClientInfo.Name = string(entity.ClientNameVSCode)
-	assert.True(t, a.ShouldEnable(s))
+	assert.True(t, a.ShouldEnable(s, mce))
 }
 
 func TestJavaTestExplorerInfoIsRelevantDocument(t *testing.T) {
