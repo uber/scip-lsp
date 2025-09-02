@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 	"os"
 	"testing"
+
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 
 	"github.com/stretchr/testify/assert"
 	action "github.com/uber/scip-lsp/src/ulsp/controller/quick-actions/action"

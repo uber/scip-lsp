@@ -2,10 +2,11 @@ package javautils
 
 import (
 	"fmt"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 
 	"go.lsp.dev/protocol"
 )

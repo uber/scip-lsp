@@ -3,10 +3,11 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"go.uber.org/config"
 	"io"
 	"path/filepath"
 	"strings"
+
+	"go.uber.org/config"
 
 	"github.com/gofrs/uuid"
 	tally "github.com/uber-go/tally"

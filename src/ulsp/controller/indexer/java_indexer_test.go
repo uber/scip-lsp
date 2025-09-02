@@ -3,12 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
-	ulspfs "github.com/uber/scip-lsp/src/ulsp/internal/fs"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 	"io"
 	"os"
 	"testing"
+
+	ulspfs "github.com/uber/scip-lsp/src/ulsp/internal/fs"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uber/scip-lsp/src/ulsp/entity"

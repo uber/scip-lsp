@@ -3,9 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"go.uber.org/config"
 	"os"
 	"testing"
+
+	"go.uber.org/config"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"

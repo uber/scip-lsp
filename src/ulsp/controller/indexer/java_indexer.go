@@ -3,10 +3,11 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 	"io"
 	"os/exec"
 	"path"
+
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	ideclient "github.com/uber/scip-lsp/src/ulsp/gateway/ide-client"

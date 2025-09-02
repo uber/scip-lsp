@@ -3,9 +3,10 @@ package quickactions
 import (
 	"context"
 	"errors"
-	"go.uber.org/config"
 	"regexp"
 	"testing"
+
+	"go.uber.org/config"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"

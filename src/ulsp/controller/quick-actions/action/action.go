@@ -3,6 +3,7 @@ package quickactions
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 
 	"github.com/uber/scip-lsp/src/ulsp/entity"

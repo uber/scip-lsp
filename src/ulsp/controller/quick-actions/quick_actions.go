@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
 	"go.uber.org/config"
-	"sync"
 
 	"github.com/gofrs/uuid"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"

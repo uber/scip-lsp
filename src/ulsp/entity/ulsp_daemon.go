@@ -2,10 +2,11 @@
 package entity
 
 import (
+	"slices"
+
 	"github.com/gofrs/uuid"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
-	"slices"
 )
 
 type keyType string

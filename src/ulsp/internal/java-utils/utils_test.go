@@ -1,11 +1,12 @@
 package javautils
 
 import (
+	"os"
+	"testing"
+
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 	"go.uber.org/mock/gomock"
-	"os"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"go.lsp.dev/protocol"
