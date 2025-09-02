@@ -117,11 +117,7 @@ func (a *ActionJavaTestRunCoverage) CommandName() string {
 
 // ShouldEnable returns true if the action should be enabled for the given session.
 func (a *ActionJavaTestRunCoverage) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
-	if monorepo.EnableJavaSupport() {
-		return true
-	}
-
-	return false
+	return monorepo.EnableJavaSupport()
 }
 
 // IsRelevantDocument returns true if the action is relevant for the given document.

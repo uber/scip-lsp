@@ -65,7 +65,7 @@ func (a *ActionJavaTestExplorerInfo) ShouldEnable(s *entity.Session, monorepo en
 	if s.InitializeParams == nil || s.InitializeParams.ClientInfo == nil {
 		return false
 	}
-	if entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
+	if monorepo.EnableJavaSupport() && entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
 		return true
 	}
 
