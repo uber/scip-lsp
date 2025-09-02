@@ -146,7 +146,9 @@ func TestJavaSyncShouldEnable(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	mce := entity.MonorepoConfigEntry{}
+	mce := entity.MonorepoConfigEntry{
+		Languages: []string{"java"},
+	}
 
 	assert.True(t, a.ShouldEnable(s, mce))
 }

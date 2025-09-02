@@ -134,13 +134,19 @@ func TestInitialize(t *testing.T) {
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
-		s.Monorepo = _monorepoNameGoCode
+		s.Monorepo = "lm/fievel"
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		c := controller{
 			currentActionRanges: newActionRangeStore(),
 			sessions:            sessionRepository,
 			enabledActions:      make(map[uuid.UUID][]action.Action),
+			// Currently only java adds actions with commands, so we can use that to trigger the duplicate command error.
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
+			},
 		}
 		result := &protocol.InitializeResult{}
 		err := c.initialize(ctx, &protocol.InitializeParams{}, result)
