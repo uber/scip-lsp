@@ -61,6 +61,15 @@ func TestJavaUtilsGetJavaTarget(t *testing.T) {
 		_, err := GetJavaTarget(fs, workspaceRoot, invalidDoc)
 		assert.Error(t, err, "no child directory contained a BUILD file")
 	})
+
+	t.Run("pseudo bazel-out file", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		validDoc := protocol.DocumentURI("file:///tmp/bazel_user/abcdef1234567890/bazel-out/k8-fastbuild/bin/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java")
+		_, err := GetJavaTarget(fs, workspaceRoot, validDoc)
+		assert.Error(t, err, "uri /tmp/bazel_user/abcdef1234567890/bazel-out/k8-fastbuild/bin/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java is not a child of the workspace /home/user/fievel")
+	})
 }
 
 func TestNormalizeIDEClient(t *testing.T) {
