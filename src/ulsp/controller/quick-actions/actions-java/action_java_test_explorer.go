@@ -45,11 +45,11 @@ func (a *ActionJavaTestExplorer) CommandName() string {
 }
 
 // ShouldEnable enables this in the Java monorepo and only when a VS Code client is connected.
-func (a *ActionJavaTestExplorer) ShouldEnable(s *entity.Session) bool {
+func (a *ActionJavaTestExplorer) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
 	if s.InitializeParams == nil || s.InitializeParams.ClientInfo == nil {
 		return false
 	}
-	if s.Monorepo == entity.MonorepoNameJava && entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
+	if monorepo.EnableJavaSupport() && entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
 		return true
 	}
 

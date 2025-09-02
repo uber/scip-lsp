@@ -87,12 +87,10 @@ func (c *controller) StartupInfo(ctx context.Context) (ulspplugin.PluginInfo, er
 	}
 
 	return ulspplugin.PluginInfo{
-		Priorities: priorities,
-		Methods:    methods,
-		NameKey:    _nameKey,
-		RelevantRepos: map[entity.MonorepoName]struct{}{
-			entity.MonorepoNameJava: {},
-		},
+		Priorities:    priorities,
+		Methods:       methods,
+		NameKey:       _nameKey,
+		RelevantRepos: c.configs.RelevantScalaRepos(),
 	}, nil
 }
 

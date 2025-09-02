@@ -41,7 +41,7 @@ type ProgressInfoParams struct {
 type Action interface {
 	// These methods should be implemented using simple conditionals, should not be expensive or depend on outside calls, and cannot return an error.
 	// ShouldEnable determines if the action should be enabled for the given session.
-	ShouldEnable(s *entity.Session) bool
+	ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool
 	// CommandName returns the name of the command which will be executed when clicked.
 	CommandName() string
 	// IsRelevantDocument determines if the action is relevant to the given document.

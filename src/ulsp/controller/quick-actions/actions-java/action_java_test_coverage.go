@@ -116,8 +116,8 @@ func (a *ActionJavaTestRunCoverage) CommandName() string {
 }
 
 // ShouldEnable returns true if the action should be enabled for the given session.
-func (a *ActionJavaTestRunCoverage) ShouldEnable(s *entity.Session) bool {
-	if s.Monorepo == entity.MonorepoNameJava {
+func (a *ActionJavaTestRunCoverage) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
+	if monorepo.EnableJavaSupport() {
 		return true
 	}
 

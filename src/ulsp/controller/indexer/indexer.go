@@ -6,7 +6,6 @@ import (
 	"go.uber.org/config"
 	"io"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"github.com/gofrs/uuid"
@@ -138,18 +137,11 @@ func (c *controller) StartupInfo(ctx context.Context) (ulspplugin.PluginInfo, er
 		WorkDoneProgressCancel: c.workDoneProgressCancel,
 	}
 
-	relevantRepos := make(map[entity.MonorepoName]struct{})
-	for monorepoName, monorepoConfig := range c.config {
-		if slices.Contains(monorepoConfig.Languages, _javaLang) {
-			relevantRepos[monorepoName] = struct{}{}
-		}
-	}
-
 	return ulspplugin.PluginInfo{
 		Priorities:    priorities,
 		Methods:       methods,
 		NameKey:       _nameKey,
-		RelevantRepos: relevantRepos,
+		RelevantRepos: c.config.RelevantJavaRepos(),
 	}, nil
 }
 
@@ -164,7 +156,7 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 	}
 
 	// Indexer is currently only supported in Java monorepositories
-	if slices.Contains(c.config[s.Monorepo].Languages, _javaLang) {
+	if c.config[s.Monorepo].EnableJavaSupport() {
 		if c.indexerOutputWriter == nil {
 			var err error
 			c.indexerOutputWriter, err = logfilewriter.SetupOutputWriter(c.outputWriterParams, _logFileKey)

@@ -61,7 +61,7 @@ func (a *ActionJavaTestExplorerInfo) CommandName() string {
 }
 
 // ShouldEnable enables this in the Java monorepo and only when a VS Code client is connected.
-func (a *ActionJavaTestExplorerInfo) ShouldEnable(s *entity.Session) bool {
+func (a *ActionJavaTestExplorerInfo) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
 	if s.InitializeParams == nil || s.InitializeParams.ClientInfo == nil {
 		return false
 	}

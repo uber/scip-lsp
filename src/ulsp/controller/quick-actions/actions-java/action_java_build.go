@@ -117,8 +117,8 @@ func (a *ActionJavaBuild) CommandName() string {
 }
 
 // ShouldEnable returns true if the action should be enabled for the given session.
-func (a *ActionJavaBuild) ShouldEnable(s *entity.Session) bool {
-	if s.Monorepo == entity.MonorepoNameJava {
+func (a *ActionJavaBuild) ShouldEnable(s *entity.Session, config entity.MonorepoConfigEntry) bool {
+	if config.EnableJavaSupport() {
 		return true
 	}
 

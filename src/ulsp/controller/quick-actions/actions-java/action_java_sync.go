@@ -110,7 +110,7 @@ func (a *ActionJavaSync) CommandName() string {
 }
 
 // ShouldEnable returns true if the action should be enabled for the given session.
-func (a *ActionJavaSync) ShouldEnable(s *entity.Session) bool {
+func (a *ActionJavaSync) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
 	// Removed monorepo check as it is not used in OS
 	return true
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
+	"go.uber.org/config"
 	"sync"
 
 	"github.com/gofrs/uuid"
@@ -41,6 +43,7 @@ const (
 type Params struct {
 	fx.In
 
+	Config     config.Provider
 	Executor   executor.Executor
 	Documents  docsync.Controller
 	IdeGateway ideclient.Gateway
@@ -67,10 +70,16 @@ type controller struct {
 	sessions            session.Repository
 	logger              *zap.SugaredLogger
 	fs                  fs.UlspFS
+	config              entity.MonorepoConfigs
 }
 
 // New creates a new controller for quick hints.
 func New(p Params) Controller {
+	configs := entity.MonorepoConfigs{}
+	if err := p.Config.Get(entity.MonorepoConfigKey).Populate(&configs); err != nil {
+		panic(fmt.Sprintf("getting configuration for %q: %v", entity.MonorepoConfigKey, err))
+	}
+
 	c := &controller{
 		documents:  p.Documents,
 		ideGateway: p.IdeGateway,
@@ -83,6 +92,7 @@ func New(p Params) Controller {
 		enabledActions:      make(map[uuid.UUID][]action.Action),
 		pendingActionRuns:   newInProgressActionStore(),
 		pendingCmds:         make(map[protocol.ProgressToken]context.CancelFunc),
+		config:              configs,
 	}
 	return c
 }
@@ -147,7 +157,7 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 
 	commands := []string{}
 	for _, action := range allActions {
-		if action.ShouldEnable(s) {
+		if action.ShouldEnable(s, c.config[s.Monorepo]) {
 			c.enabledActions[s.UUID] = append(c.enabledActions[s.UUID], action)
 			if action.CommandName() != "" {
 				commands = append(commands, action.CommandName())
