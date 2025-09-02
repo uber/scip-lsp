@@ -3,6 +3,7 @@ package quickactions
 import (
 	"context"
 	"errors"
+	"go.uber.org/config"
 	"regexp"
 	"testing"
 
@@ -27,9 +28,12 @@ const _monorepoNameGoCode entity.MonorepoName = "go-code"
 var _sampleRegex = regexp.MustCompile("sampleRegex")
 
 func TestNew(t *testing.T) {
+	mockConfig, _ := config.NewStaticProvider(map[string]interface{}{})
+
 	assert.NotPanics(t, func() {
 		New(Params{
 			Logger: zap.NewNop().Sugar(),
+			Config: mockConfig,
 		})
 	})
 }
@@ -46,31 +50,37 @@ func TestInitialize(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name          string
-		monorepo      entity.MonorepoName
-		monorepoEntry entity.MonorepoConfigEntry
-		client        string
+		name     string
+		monorepo entity.MonorepoName
+		config   entity.MonorepoConfigs
+		client   string
 	}{
 		{
 			name:     "go",
 			monorepo: "go-code",
-			monorepoEntry: entity.MonorepoConfigEntry{
-				Languages: []string{"go"},
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"go-code": {
+					Languages: []string{"go"},
+				},
 			},
 		},
 		{
 			name:     "java vs code",
 			monorepo: "lm/fievel",
-			monorepoEntry: entity.MonorepoConfigEntry{
-				Languages: []string{"java"},
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
 			},
 			client: "Visual Studio Code",
 		},
 		{
 			name:     "java other",
 			monorepo: "lm/fievel",
-			monorepoEntry: entity.MonorepoConfigEntry{
-				Languages: []string{"go"},
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
 			},
 			client: "other",
 		},
@@ -90,6 +100,7 @@ func TestInitialize(t *testing.T) {
 				currentActionRanges: newActionRangeStore(),
 				sessions:            sessionRepository,
 				enabledActions:      make(map[uuid.UUID][]action.Action),
+				config:              tt.config,
 			}
 
 			result := &protocol.InitializeResult{}
@@ -98,7 +109,7 @@ func TestInitialize(t *testing.T) {
 			assert.Equal(t, result.Capabilities.CodeActionProvider, &protocol.CodeActionOptions{CodeActionKinds: []protocol.CodeActionKind{_codeActionKind}})
 
 			for _, a := range allActions {
-				if a.ShouldEnable(s, tt.monorepoEntry) {
+				if a.ShouldEnable(s, tt.config[tt.monorepo]) {
 					assert.Contains(t, c.enabledActions[s.UUID], a)
 				} else {
 					assert.NotContains(t, c.enabledActions[s.UUID], a)
