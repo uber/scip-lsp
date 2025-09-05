@@ -19,10 +19,10 @@ SHA256_FILE_SUFFIX = ".sha256"
 WORKSPACE_FILE_NAME = "workspace.json"
 
 JAVA_VERSION_FLAGS = [
-    "--java_language_version=21",
-    "--java_runtime_version=remotejdk_21",
-    "--tool_java_language_version=21",
-    "--tool_java_runtime_version=remotejdk_21",
+    "--java_language_version=17",
+    "--java_runtime_version=remotejdk_17",
+    "--tool_java_language_version=17",
+    "--tool_java_runtime_version=remotejdk_17",
 ]
 
 
