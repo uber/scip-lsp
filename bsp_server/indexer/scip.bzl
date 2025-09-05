@@ -127,7 +127,7 @@ def _scip_java(target, ctx):
             for jar in rule_jars:
                 # Mimic arguments from java decompiler plugin in Intellij
                 # mirror: https://github.com/fesh0r/fernflower
-                decompiled_jar = ctx.actions.declare_file(jar.short_path + "_dec.jar")
+                decompiled_jar = ctx.actions.declare_file("out/" + jar.short_path + "_dec.jar")
                 args = [
                     "-target_file=" + decompiled_jar.path,
                     "-timeout=" + timeout,
@@ -219,7 +219,7 @@ def _index_sources(
     return [scip_file_mutated, sha256_file]
 
 def _index_jar(ctx, target, jar, flow_prefix = "_index_jar"):
-    unpacked = ctx.actions.declare_directory(jar.short_path + flow_prefix + "-unpacked")
+    unpacked = ctx.actions.declare_directory("out/" + jar.short_path + flow_prefix + "-unpacked")
     ctx.actions.run_shell(
         inputs = [jar],
         outputs = [unpacked],
@@ -234,7 +234,7 @@ def _index_jar(ctx, target, jar, flow_prefix = "_index_jar"):
         progress_message = "Extracting jar {jar}".format(jar = jar.path),
     )
 
-    sources_file = ctx.actions.declare_file(jar.short_path + "_sources.txt")
+    sources_file = ctx.actions.declare_file("out/" + jar.short_path + "_sources.txt")
     ctx.actions.run_shell(
         command = """
             touch "{sources_file}";
