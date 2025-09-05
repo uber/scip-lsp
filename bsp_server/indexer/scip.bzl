@@ -325,7 +325,7 @@ def _get_classpath_from_target(ctx, target, flow_prefix):
                 generated_class_jars.append(target[JavaInfo].annotation_processing.class_jar)
 
     if compilation_info == None:
-        return info.transitive_compile_time_jars.to_list()
+        return generated_class_jars + info.transitive_compile_time_jars.to_list()
     else:
         lombok_extractor = ctx.executable._lombok_extractor
 
