@@ -12,7 +12,7 @@ py_library(
 
 py_test(
     name = "test_scip_utils",
-    srcs = glob(["test/test_scip_utils.py"]),
+    srcs = ["test/test_scip_utils.py"],
     deps = [
         ":scip_sync_util",
     ],
