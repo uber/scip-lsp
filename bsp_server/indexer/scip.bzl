@@ -163,10 +163,15 @@ def _index_sources(
         ctx,
         target,
         sources_file,
-        sources_folders = [],
+        sources_folders = None
         inputs = depset(),
-        additional_classpath = [],
+        additional_classpath = None,
         flow_prefix = "_index_sources"):
+    if source_folders == None:
+        source_folders = []
+    if additional_classpath == None:
+        additional_classpath = []
+
     classpath = _get_classpath_from_target(ctx, target, flow_prefix)
     indexer = ctx.executable._java_aggregate_binary
     sematicdb_javac_plugin = ctx.attr._javac_semanticdb_plugin[DefaultInfo].files.to_list()[0]
@@ -207,6 +212,7 @@ def _index_sources(
     sha256_file = ctx.actions.declare_file(scip_file_mutated_label + ".sha256")
     ctx.actions.run_shell(
         inputs = [scip_file_mutated],
+        progress_message = "Generating SHA256 hash for %s" % ctx.label.package + ":" + ctx.label.name,
         outputs = [sha256_file],
         command = "shasum -a 256 {} | cut -d' ' -f1 > {}".format(
             scip_file_mutated.path,
