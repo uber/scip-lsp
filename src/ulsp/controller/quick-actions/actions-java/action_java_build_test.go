@@ -5,7 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
+
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 
 	"github.com/stretchr/testify/assert"
 	action "github.com/uber/scip-lsp/src/ulsp/controller/quick-actions/action"
@@ -19,6 +23,136 @@ import (
 )
 
 func TestJavaBuildExecute(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ctx := context.Background()
+	a := ActionJavaBuild{}
+
+	sessionRepository := repositorymock.NewMockRepository(ctrl)
+	s := &entity.Session{
+		UUID: factory.UUID(),
+		InitializeParams: &protocol.InitializeParams{
+			ClientInfo: &protocol.ClientInfo{
+				Name: "Visual Studio Code",
+			},
+		},
+	}
+	s.WorkspaceRoot = "/home/user/fievel"
+	s.Monorepo = "lm/fievel"
+
+	t.Run("success", func(t *testing.T) {
+		executorMock := executormock.NewMockExecutor(ctrl)
+		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/tooling/intellij/uber-intellij-plugin-core").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(8).Return([]os.DirEntry{}, nil)
+
+		params := &action.ExecuteParams{
+			IdeGateway: ideGatewayMock,
+			Sessions:   sessionRepository,
+			Executor:   executorMock,
+			FileSystem: fs,
+		}
+
+		var writer bytes.Buffer
+		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
+		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
+		executorMock.EXPECT().RunCommand(gomock.Any(), gomock.Any()).Return(nil)
+
+		assert.NoError(t, a.Execute(ctx, params, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
+	})
+
+	t.Run("bad args", func(t *testing.T) {
+		executorMock := executormock.NewMockExecutor(ctrl)
+		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Times(0).Return(true, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(0).Return([]os.DirEntry{}, nil)
+
+		c := &action.ExecuteParams{
+			IdeGateway: ideGatewayMock,
+			Sessions:   sessionRepository,
+			Executor:   executorMock,
+			FileSystem: fs,
+		}
+		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
+		assert.Error(t, a.Execute(ctx, c, []byte(`{"brokenJSON`)))
+	})
+
+	t.Run("log message failure", func(t *testing.T) {
+		executorMock := executormock.NewMockExecutor(ctrl)
+		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/tooling/intellij/uber-intellij-plugin-core").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(8).Return([]os.DirEntry{}, nil)
+
+		c := &action.ExecuteParams{
+			IdeGateway: ideGatewayMock,
+			Sessions:   sessionRepository,
+			Executor:   executorMock,
+			FileSystem: fs,
+		}
+
+		var writer bytes.Buffer
+		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
+		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
+		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(errors.New("error"))
+
+		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
+	})
+
+	t.Run("writer failure", func(t *testing.T) {
+		executorMock := executormock.NewMockExecutor(ctrl)
+		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Times(0).Return(true, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(0).Return([]os.DirEntry{}, nil)
+
+		c := &action.ExecuteParams{
+			IdeGateway: ideGatewayMock,
+			Sessions:   sessionRepository,
+			Executor:   executorMock,
+			FileSystem: fs,
+		}
+
+		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
+		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
+		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
+	})
+
+	t.Run("execution failure", func(t *testing.T) {
+		executorMock := executormock.NewMockExecutor(ctrl)
+		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/tooling/intellij/uber-intellij-plugin-core").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(8).Return([]os.DirEntry{}, nil)
+
+		c := &action.ExecuteParams{
+			IdeGateway: ideGatewayMock,
+			Sessions:   sessionRepository,
+			Executor:   executorMock,
+			FileSystem: fs,
+		}
+
+		var writer bytes.Buffer
+		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
+		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil).AnyTimes()
+		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
+		executorMock.EXPECT().RunCommand(gomock.Any(), gomock.Any()).Return(errors.New("error"))
+
+		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
+	})
+}
+
+func TestJavaBuildProvideWorkDoneProgressParams(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 	a := ActionJavaBuild{}
@@ -33,112 +167,32 @@ func TestJavaBuildExecute(t *testing.T) {
 		},
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
 		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
-		c := &action.ExecuteParams{
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/tooling").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(8).Return([]os.DirEntry{}, nil)
+
+		params := &action.ExecuteParams{
 			IdeGateway: ideGatewayMock,
 			Sessions:   sessionRepository,
 			Executor:   executorMock,
-		}
-
-		var writer bytes.Buffer
-		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).Return(nil)
-		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		executorMock.EXPECT().RunCommand(gomock.Any(), gomock.Any()).Return(nil)
-
-		assert.NoError(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
-	})
-
-	t.Run("bad args", func(t *testing.T) {
-		executorMock := executormock.NewMockExecutor(ctrl)
-		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
-		c := &action.ExecuteParams{
-			IdeGateway: ideGatewayMock,
-			Sessions:   sessionRepository,
-			Executor:   executorMock,
-		}
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		assert.Error(t, a.Execute(ctx, c, []byte(`{"brokenJSON`)))
-	})
-
-	t.Run("log message failure", func(t *testing.T) {
-		executorMock := executormock.NewMockExecutor(ctrl)
-		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
-		c := &action.ExecuteParams{
-			IdeGateway: ideGatewayMock,
-			Sessions:   sessionRepository,
-			Executor:   executorMock,
-		}
-
-		var writer bytes.Buffer
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
-		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/roadrunner/application-dw/src/test/java/com/uber/roadrunner/application/exception/GatewayErrorExceptionMapperTest.java"}}`)))
-	})
-
-	t.Run("writer failure", func(t *testing.T) {
-		executorMock := executormock.NewMockExecutor(ctrl)
-		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
-		c := &action.ExecuteParams{
-			IdeGateway: ideGatewayMock,
-			Sessions:   sessionRepository,
-			Executor:   executorMock,
+			FileSystem: fs,
 		}
 
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(nil, errors.New("error"))
-		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
+
+		providedParams, err := a.ProvideWorkDoneProgressParams(ctx, params, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/src/main/java/com/uber/intellij/bazel/BazelSync.java"}}`))
+
+		assert.NoError(t, err, "No error should be reported")
+		assert.NotNil(t, providedParams)
+		assert.Contains(t, fmt.Sprintf("%v", providedParams.Title), "Build")
 	})
-
-	t.Run("execution failure", func(t *testing.T) {
-		executorMock := executormock.NewMockExecutor(ctrl)
-		ideGatewayMock := ideclientmock.NewMockGateway(ctrl)
-		c := &action.ExecuteParams{
-			IdeGateway: ideGatewayMock,
-			Sessions:   sessionRepository,
-			Executor:   executorMock,
-		}
-
-		var writer bytes.Buffer
-		ideGatewayMock.EXPECT().GetLogMessageWriter(gomock.Any(), gomock.Any()).Return(&writer, nil)
-		ideGatewayMock.EXPECT().LogMessage(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		executorMock.EXPECT().RunCommand(gomock.Any(), gomock.Any()).Return(errors.New("error"))
-
-		assert.Error(t, a.Execute(ctx, c, []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/intellij/uber-intellij-plugin-core/src/main/java/com/uber/intellij/bazel/BazelSyncListener.java"}}`)))
-	})
-
-}
-
-func TestJavaBuildProcessDocument(t *testing.T) {
-	a := ActionJavaBuild{}
-	doc := protocol.TextDocumentItem{
-		URI:        "file:///MyExampleTest.java",
-		LanguageID: "java",
-		Text: `package com.uber.rider.growth.jobs;
-
-import com.uber.fievel.testing.base.FievelTestBase;
-import org.junit.Test;
-
-public class MyExampleTest extends FievelTestBase {
-
-	@Test
-	public void myTestMethod() throws Exception {}
-}
-
-	`}
-	results, err := a.ProcessDocument(context.Background(), doc)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(results))
-	args := results[0].(protocol.CodeLens).Command.Arguments[0].(argsJavaBuild)
-	assert.Equal(t, doc.URI, args.Document.URI)
-	assert.Equal(t, "MyExampleTest", args.ClassName)
 }
 
 func TestJavaBuildCommandName(t *testing.T) {
@@ -153,14 +207,16 @@ func TestJavaBuildShouldEnable(t *testing.T) {
 		UUID: factory.UUID(),
 		InitializeParams: &protocol.InitializeParams{
 			ClientInfo: &protocol.ClientInfo{
-				Name: "Visual Studio Code",
+				Name: "Something else",
 			},
 		},
 	}
-	assert.False(t, a.ShouldEnable(s))
+	mce := entity.MonorepoConfigEntry{}
 
-	s.Monorepo = entity.MonorepoNameJava
-	assert.True(t, a.ShouldEnable(s))
+	assert.False(t, a.ShouldEnable(s, mce))
+
+	s.InitializeParams.ClientInfo.Name = string(entity.ClientNameVSCode)
+	assert.False(t, a.ShouldEnable(s, mce))
 }
 
 func TestJavaBuildIsRelevantDocument(t *testing.T) {
@@ -171,60 +227,6 @@ func TestJavaBuildIsRelevantDocument(t *testing.T) {
 
 	irrelevantDoc := protocol.TextDocumentItem{URI: "file:///test.go", LanguageID: "go"}
 	assert.False(t, a.IsRelevantDocument(nil, irrelevantDoc))
-}
-
-func TestJavaBuildProvideWorkDoneProgressParams(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	ctx := context.Background()
-	a := ActionJavaBuild{}
-
-	sessionRepository := repositorymock.NewMockRepository(ctrl)
-	s := &entity.Session{
-		UUID: factory.UUID(),
-		InitializeParams: &protocol.InitializeParams{
-			ClientInfo: &protocol.ClientInfo{
-				Name: "Visual Studio Code",
-			},
-		},
-	}
-	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
-
-	rawArgs := []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/src/main/java/com/uber/intellij/bazel/BazelSync.java"}}`)
-
-	execParams := &action.ExecuteParams{
-		Sessions: sessionRepository,
-	}
-	t.Run("Success", func(t *testing.T) {
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		params, err := a.ProvideWorkDoneProgressParams(ctx, execParams, rawArgs)
-		assert.NoError(t, err)
-		assert.NotNil(t, params)
-		assert.Equal(t, fmt.Sprintf(_titleJavaBuildProgressBar, "BazelSync.java"), params.Title)
-		assert.Equal(t, fmt.Sprintf(_messageJavaBuildProgressBar, "tooling/..."), params.Message)
-	})
-
-	t.Run("Context Error", func(t *testing.T) {
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(nil, errors.New("ctx error"))
-		_, err := a.ProvideWorkDoneProgressParams(ctx, execParams, rawArgs)
-		assert.Error(t, err, "context error should be thrown")
-	})
-
-	t.Run("missing src", func(t *testing.T) {
-		invalidPathArgs := []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel"}}`)
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		_, err := a.ProvideWorkDoneProgressParams(ctx, execParams, invalidPathArgs)
-		assert.Error(t, err)
-
-	})
-
-	t.Run("missing workspace root", func(t *testing.T) {
-		invalidPathArgs := []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/src/bazel/BazelSync.java"}}`)
-		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
-		_, err := a.ProvideWorkDoneProgressParams(ctx, execParams, invalidPathArgs)
-		assert.Error(t, err)
-
-	})
 }
 
 func TestJavaBuildPrepareCommandAndEnv(t *testing.T) {

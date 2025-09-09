@@ -51,7 +51,7 @@ func (a *ActionJavaTestRunCoverage) Execute(ctx context.Context, params *action.
 	if err != nil {
 		return fmt.Errorf("getting writer: %w", err)
 	}
-	target, err := javautils.GetJavaTarget(s.WorkspaceRoot, resultArgs.Document.URI)
+	target, err := javautils.GetJavaTarget(params.FileSystem, s.WorkspaceRoot, resultArgs.Document.URI)
 	if err != nil {
 		return err
 	}
@@ -116,12 +116,8 @@ func (a *ActionJavaTestRunCoverage) CommandName() string {
 }
 
 // ShouldEnable returns true if the action should be enabled for the given session.
-func (a *ActionJavaTestRunCoverage) ShouldEnable(s *entity.Session) bool {
-	if s.Monorepo == entity.MonorepoNameJava {
-		return true
-	}
-
-	return false
+func (a *ActionJavaTestRunCoverage) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
+	return monorepo.EnableJavaSupport()
 }
 
 // IsRelevantDocument returns true if the action is relevant for the given document.

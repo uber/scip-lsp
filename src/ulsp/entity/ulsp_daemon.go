@@ -2,6 +2,8 @@
 package entity
 
 import (
+	"slices"
+
 	"github.com/gofrs/uuid"
 	"go.lsp.dev/jsonrpc2"
 	"go.lsp.dev/protocol"
@@ -14,6 +16,9 @@ const SessionContextKey keyType = "SessionUUID"
 
 // MonorepoConfigKey is the key that contains monorepo specific configuration.
 const MonorepoConfigKey = "monorepos"
+
+const _javaLang = "java"
+const _scalaLang = "scala"
 
 // UlspDaemon placeholder entity.
 type UlspDaemon struct {
@@ -56,12 +61,6 @@ type TextDocumentIdenfitierWithSession struct {
 // MonorepoName for supported Uber monorepos.
 type MonorepoName string
 
-// Identifier for each monorepo.
-const (
-	MonorepoNameGoCode MonorepoName = "go-code"
-	MonorepoNameJava   MonorepoName = "lm/fievel"
-)
-
 // MonorepoConfigs contain the config entries that differ between monorepos
 type MonorepoConfigs map[MonorepoName]MonorepoConfigEntry
 
@@ -73,6 +72,7 @@ type MonorepoConfigEntry struct {
 	ProjectViewPaths     []string          `yaml:"projectViewPaths"`
 	BSPVersionOverride   string            `yaml:"bspVersionOverride"`
 	Formatters           []FormatterConfig `yaml:"formatters"`
+	Languages            []string          `yaml:"languages"`
 	BuildEnvOverrides    []string          `yaml:"buildEnvOverrides"`
 	RegistryFeatureFlags map[string]bool   `yaml:"registryFeatureFlags"`
 }
@@ -108,4 +108,35 @@ const (
 // IsVSCodeBased returns true if the client is a VS Code based client.
 func (c ClientName) IsVSCodeBased() bool {
 	return c == ClientNameVSCode || c == ClientNameCursor
+}
+
+func (mce MonorepoConfigEntry) EnableJavaSupport() bool {
+	return slices.Contains(mce.Languages, _javaLang)
+}
+
+func (mce MonorepoConfigEntry) EnableScalaSupport() bool {
+	return slices.Contains(mce.Languages, _scalaLang)
+}
+
+func (configs MonorepoConfigs) RelevantJavaRepos() map[MonorepoName]struct{} {
+	return configs.relevantRepos(func(entry MonorepoConfigEntry) bool {
+		return entry.EnableJavaSupport()
+	})
+}
+
+func (configs MonorepoConfigs) RelevantScalaRepos() map[MonorepoName]struct{} {
+	return configs.relevantRepos(func(entry MonorepoConfigEntry) bool {
+		return entry.EnableScalaSupport()
+	})
+}
+
+func (configs MonorepoConfigs) relevantRepos(predicate func(entry MonorepoConfigEntry) bool) map[MonorepoName]struct{} {
+	relevantRepos := make(map[MonorepoName]struct{})
+	for monorepoName, monorepoConfig := range configs {
+		if predicate(monorepoConfig) {
+			relevantRepos[monorepoName] = struct{}{}
+		}
+	}
+
+	return relevantRepos
 }

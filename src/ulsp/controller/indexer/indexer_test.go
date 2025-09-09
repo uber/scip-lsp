@@ -6,6 +6,8 @@ import (
 	"os"
 	"testing"
 
+	"go.uber.org/config"
+
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,10 +27,12 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	mockConfig, _ := config.NewStaticProvider(map[string]interface{}{})
 	assert.NotPanics(t, func() {
 		New(Params{
 			Logger: zap.NewNop().Sugar(),
 			Stats:  tally.NewTestScope("testing", make(map[string]string, 0)),
+			Config: mockConfig,
 		})
 	})
 }
@@ -65,8 +69,15 @@ func TestInitialize(t *testing.T) {
 	fs.EXPECT().MkdirAll(gomock.Any()).Return(nil)
 	fs.EXPECT().TempFile(gomock.Any(), gomock.Any()).Return(tempFile, nil)
 
+	monorepoConfig := entity.MonorepoConfigs{
+		"": {
+			Languages: []string{"java"},
+		},
+	}
+
 	c := controller{
 		sessions: sessionRepository,
+		config:   monorepoConfig,
 		outputWriterParams: logfilewriter.Params{
 			Lifecycle:      fxtest.NewLifecycle(t),
 			ServerInfoFile: infoFile,

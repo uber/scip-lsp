@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/uber/scip-lsp/src/ulsp/entity"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
+	"go.uber.org/config"
+
 	"github.com/gofrs/uuid"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
 	action "github.com/uber/scip-lsp/src/ulsp/controller/quick-actions/action"
@@ -40,11 +44,13 @@ const (
 type Params struct {
 	fx.In
 
+	Config     config.Provider
 	Executor   executor.Executor
 	Documents  docsync.Controller
 	IdeGateway ideclient.Gateway
 	Sessions   session.Repository
 	Logger     *zap.SugaredLogger
+	FS         fs.UlspFS
 }
 
 // Controller defines the methods that this controller provides.
@@ -64,21 +70,30 @@ type controller struct {
 	ideGateway          ideclient.Gateway
 	sessions            session.Repository
 	logger              *zap.SugaredLogger
+	fs                  fs.UlspFS
+	config              entity.MonorepoConfigs
 }
 
 // New creates a new controller for quick hints.
 func New(p Params) Controller {
+	configs := entity.MonorepoConfigs{}
+	if err := p.Config.Get(entity.MonorepoConfigKey).Populate(&configs); err != nil {
+		panic(fmt.Sprintf("getting configuration for %q: %v", entity.MonorepoConfigKey, err))
+	}
+
 	c := &controller{
 		documents:  p.Documents,
 		ideGateway: p.IdeGateway,
 		sessions:   p.Sessions,
 		executor:   p.Executor,
 		logger:     p.Logger.With("plugin", _nameKey),
+		fs:         p.FS,
 
 		currentActionRanges: newActionRangeStore(),
 		enabledActions:      make(map[uuid.UUID][]action.Action),
 		pendingActionRuns:   newInProgressActionStore(),
 		pendingCmds:         make(map[protocol.ProgressToken]context.CancelFunc),
+		config:              configs,
 	}
 	return c
 }
@@ -143,7 +158,7 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 
 	commands := []string{}
 	for _, action := range allActions {
-		if action.ShouldEnable(s) {
+		if action.ShouldEnable(s, c.config[s.Monorepo]) {
 			c.enabledActions[s.UUID] = append(c.enabledActions[s.UUID], action)
 			if action.CommandName() != "" {
 				commands = append(commands, action.CommandName())
@@ -261,6 +276,7 @@ func (c *controller) executeCommand(ctx context.Context, params *protocol.Execut
 			Executor:      c.executor,
 			IdeGateway:    c.ideGateway,
 			ProgressToken: progressToken,
+			FileSystem:    c.fs,
 		}
 
 		progressInfoParams, err := currentAction.ProvideWorkDoneProgressParams(ctx, params, args)

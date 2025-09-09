@@ -4,7 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"testing"
+
+	ulspfs "github.com/uber/scip-lsp/src/ulsp/internal/fs"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock/helpers"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
@@ -26,7 +31,7 @@ func TestJavaIndexerSyncIndex(t *testing.T) {
 	doc := protocol.TextDocumentItem{
 		URI: protocol.DocumentURI("file:///home/fievel/sample.java"),
 	}
-	indexer := NewJavaIndexer(s, io.Discard)
+	indexer := NewJavaIndexer(ulspfs.New(), s, io.Discard)
 
 	t.Run("success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
@@ -53,7 +58,7 @@ func TestJavaIndexerNewJavaIndexer(t *testing.T) {
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = "/home/fievel"
-	indexer := NewJavaIndexer(s, io.Discard)
+	indexer := NewJavaIndexer(ulspfs.New(), s, io.Discard)
 	assert.NotNil(t, indexer)
 }
 
@@ -62,7 +67,7 @@ func TestJavaIndexerIsRelevantDocument(t *testing.T) {
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = "/home/fievel"
-	indexer := NewJavaIndexer(s, io.Discard)
+	indexer := NewJavaIndexer(ulspfs.New(), s, io.Discard)
 
 	t.Run("success java", func(t *testing.T) {
 		doc := protocol.TextDocumentItem{
@@ -95,9 +100,17 @@ func TestJavaIndexerGetUniqueIndexKey(t *testing.T) {
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
 	s.UUID = factory.UUID()
-	indexer := NewJavaIndexer(s, io.Discard)
 
 	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		fs.EXPECT().DirExists(gomock.Any()).Return(true, nil)
+		fs.EXPECT().ReadDir("/home/user/fievel/tooling/intellij").Return([]os.DirEntry{helpers.MockDirEntry("BUILD.bazel", false)}, nil)
+		fs.EXPECT().ReadDir(gomock.Any()).Times(4).Return([]os.DirEntry{}, nil)
+
+		indexer := NewJavaIndexer(fs, s, io.Discard)
+
 		validDoc := protocol.TextDocumentItem{
 			URI: "file:///home/user/fievel/tooling/intellij/src/intellij/bazel/BazelSyncListener.java",
 		}
@@ -108,6 +121,11 @@ func TestJavaIndexerGetUniqueIndexKey(t *testing.T) {
 	})
 
 	t.Run("failure", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		fs := fsmock.NewMockUlspFS(ctrl)
+
+		indexer := NewJavaIndexer(fs, s, io.Discard)
+
 		invalidDoc := protocol.TextDocumentItem{
 			URI: "file:///home/user/BazelSyncListener.java",
 		}

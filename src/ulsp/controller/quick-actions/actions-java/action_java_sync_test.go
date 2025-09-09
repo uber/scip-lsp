@@ -28,7 +28,7 @@ func TestJavaSyncExecute(t *testing.T) {
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	t.Run("success", func(t *testing.T) {
 		executorMock := executormock.NewMockExecutor(ctrl)
@@ -146,7 +146,11 @@ func TestJavaSyncShouldEnable(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	assert.True(t, a.ShouldEnable(s))
+	mce := entity.MonorepoConfigEntry{
+		Languages: []string{"java"},
+	}
+
+	assert.True(t, a.ShouldEnable(s, mce))
 }
 
 func TestJavaSyncIsRelevantDocument(t *testing.T) {
@@ -192,7 +196,7 @@ func TestJavaSyncProvideWorkDoneProgressParams(t *testing.T) {
 		UUID: factory.UUID(),
 	}
 	s.WorkspaceRoot = "/home/user/fievel"
-	s.Monorepo = entity.MonorepoNameJava
+	s.Monorepo = "lm/fievel"
 
 	rawArgs := []byte(`{"interfaceName": "myInterface", "document": {"uri": "file:///home/user/fievel/tooling/src/main/java/com/uber/intellij/bazel/BazelSync.java"}}`)
 

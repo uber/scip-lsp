@@ -81,7 +81,7 @@ def _scip_java(target, ctx):
                 elif "src/test/java" in dirname:
                     index = dirname.index("src/test/java") + len("src/test/java")
                     dirname = dirname[:index]
-                source_roots.setdefault(dirname, default = None)
+                source_roots.setdefault(dirname, None)
             elif src.path.endswith(".srcjar"):
                 source_jars.append(src)
 
@@ -127,7 +127,7 @@ def _scip_java(target, ctx):
             for jar in rule_jars:
                 # Mimic arguments from java decompiler plugin in Intellij
                 # mirror: https://github.com/fesh0r/fernflower
-                decompiled_jar = ctx.actions.declare_file(jar.short_path + "_dec.jar")
+                decompiled_jar = ctx.actions.declare_file("out/" + jar.short_path + "_dec.jar")
                 args = [
                     "-target_file=" + decompiled_jar.path,
                     "-timeout=" + timeout,
@@ -163,11 +163,15 @@ def _index_sources(
         ctx,
         target,
         sources_file,
-        sources_folders = [],
+        sources_folders = None
         inputs = depset(),
-        additional_classpath = [],
+        additional_classpath = None,
         flow_prefix = "_index_sources"):
-    target_name = ctx.label.package + ":" + ctx.label.name
+    if source_folders == None:
+        source_folders = []
+    if additional_classpath == None:
+        additional_classpath = []
+
     classpath = _get_classpath_from_target(ctx, target, flow_prefix)
     indexer = ctx.executable._java_aggregate_binary
     sematicdb_javac_plugin = ctx.attr._javac_semanticdb_plugin[DefaultInfo].files.to_list()[0]
@@ -208,6 +212,7 @@ def _index_sources(
     sha256_file = ctx.actions.declare_file(scip_file_mutated_label + ".sha256")
     ctx.actions.run_shell(
         inputs = [scip_file_mutated],
+        progress_message = "Generating SHA256 hash for %s" % ctx.label.package + ":" + ctx.label.name,
         outputs = [sha256_file],
         command = "shasum -a 256 {} | cut -d' ' -f1 > {}".format(
             scip_file_mutated.path,
@@ -219,7 +224,7 @@ def _index_sources(
     return [scip_file_mutated, sha256_file]
 
 def _index_jar(ctx, target, jar, flow_prefix = "_index_jar"):
-    unpacked = ctx.actions.declare_directory(jar.short_path + flow_prefix + "-unpacked")
+    unpacked = ctx.actions.declare_directory("out/" + jar.short_path + flow_prefix + "-unpacked")
     ctx.actions.run_shell(
         inputs = [jar],
         outputs = [unpacked],
@@ -234,7 +239,7 @@ def _index_jar(ctx, target, jar, flow_prefix = "_index_jar"):
         progress_message = "Extracting jar {jar}".format(jar = jar.path),
     )
 
-    sources_file = ctx.actions.declare_file(jar.short_path + "_sources.txt")
+    sources_file = ctx.actions.declare_file("out/" + jar.short_path + "_sources.txt")
     ctx.actions.run_shell(
         command = """
             touch "{sources_file}";
@@ -313,7 +318,6 @@ scip_java_aspect = aspect(
 
 def _get_classpath_from_target(ctx, target, flow_prefix):
     info = target[JavaInfo]
-    compilation = info.compilation_info
 
     # compilation_info can be None for scala library/test targets
     # In this case we rely on JavaInfo compile/runtime atrributes
@@ -323,12 +327,11 @@ def _get_classpath_from_target(ctx, target, flow_prefix):
     generated_class_jars = []
     for a in target.actions:
         if a.mnemonic == "Javac":
-            javac_action = a
             if hasattr(target[JavaInfo], "annotation_processing") and hasattr(target[JavaInfo].annotation_processing, "class_jar") and target[JavaInfo].annotation_processing.class_jar:
                 generated_class_jars.append(target[JavaInfo].annotation_processing.class_jar)
 
     if compilation_info == None:
-        return info.transitive_compile_time_jars.to_list()
+        return generated_class_jars + info.transitive_compile_time_jars.to_list()
     else:
         lombok_extractor = ctx.executable._lombok_extractor
 

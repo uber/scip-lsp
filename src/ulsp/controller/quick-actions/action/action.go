@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
+
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	ideclient "github.com/uber/scip-lsp/src/ulsp/gateway/ide-client"
 	"github.com/uber/scip-lsp/src/ulsp/internal/executor"
@@ -25,6 +27,7 @@ type ExecuteParams struct {
 	IdeGateway    ideclient.Gateway
 	Executor      executor.Executor
 	ProgressToken *protocol.ProgressToken
+	FileSystem    fs.UlspFS
 }
 
 // ProgressInfoParams provides parameters for display during progress of action in status bar
@@ -39,7 +42,7 @@ type ProgressInfoParams struct {
 type Action interface {
 	// These methods should be implemented using simple conditionals, should not be expensive or depend on outside calls, and cannot return an error.
 	// ShouldEnable determines if the action should be enabled for the given session.
-	ShouldEnable(s *entity.Session) bool
+	ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool
 	// CommandName returns the name of the command which will be executed when clicked.
 	CommandName() string
 	// IsRelevantDocument determines if the action is relevant to the given document.

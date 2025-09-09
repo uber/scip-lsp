@@ -30,12 +30,18 @@ func TestNew(t *testing.T) {
 
 func TestStartupInfo(t *testing.T) {
 	ctx := context.Background()
-	c := &controller{}
+	c := &controller{
+		configs: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+			"lm/fievel": {
+				Languages: []string{"java", "scala"},
+			},
+		},
+	}
 	info, err := c.StartupInfo(ctx)
 	assert.NoError(t, err)
 	assert.NoError(t, info.Validate())
 	assert.Equal(t, _nameKey, info.NameKey)
-	assert.Contains(t, info.RelevantRepos, entity.MonorepoNameJava)
+	assert.Contains(t, info.RelevantRepos, entity.MonorepoName("lm/fievel"))
 }
 
 func TestInitialized(t *testing.T) {

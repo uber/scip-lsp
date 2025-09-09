@@ -58,7 +58,7 @@ func (a *ActionJavaTestRun) Execute(ctx context.Context, params *action.ExecuteP
 	}
 
 	testCaseName := a.getTestCaseName(resultArgs)
-	target, err := javautils.GetJavaTarget(s.WorkspaceRoot, resultArgs.Document.URI)
+	target, err := javautils.GetJavaTarget(params.FileSystem, s.WorkspaceRoot, resultArgs.Document.URI)
 	if err != nil {
 		return err
 	}
@@ -117,12 +117,12 @@ func (a *ActionJavaTestRun) CommandName() string {
 }
 
 // ShouldEnable returns whether the action should be enabled for the given session.
-func (a *ActionJavaTestRun) ShouldEnable(s *entity.Session) bool {
+func (a *ActionJavaTestRun) ShouldEnable(s *entity.Session, monorepo entity.MonorepoConfigEntry) bool {
 	if s.InitializeParams == nil || s.InitializeParams.ClientInfo == nil {
 		return false
 	}
 	// Users of the VS Code client will instead of use the Test Explorer.
-	if s.Monorepo == entity.MonorepoNameJava && !entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
+	if monorepo.EnableJavaSupport() && !entity.ClientName(s.InitializeParams.ClientInfo.Name).IsVSCodeBased() {
 		return true
 	}
 

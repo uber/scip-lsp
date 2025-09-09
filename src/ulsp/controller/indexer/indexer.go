@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"go.uber.org/config"
+
 	"github.com/gofrs/uuid"
 	tally "github.com/uber-go/tally"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
@@ -25,8 +27,8 @@ import (
 )
 
 const (
+	_javaLang    = "java"
 	_nameKey     = "indexer"
-	_fievel      = "fievel"
 	_syncMessage = "Syncing index for file: %s"
 )
 
@@ -50,6 +52,7 @@ type Params struct {
 
 	Sessions       session.Repository
 	Logger         *zap.SugaredLogger
+	Config         config.Provider
 	Documents      docsync.Controller
 	Guidance       userguidance.Controller
 	Stats          tally.Scope
@@ -68,6 +71,7 @@ type Controller interface {
 type controller struct {
 	sessions           session.Repository
 	logger             *zap.SugaredLogger
+	config             entity.MonorepoConfigs
 	documents          docsync.Controller
 	executor           executor.Executor
 	ideGateway         ideclient.Gateway
@@ -81,9 +85,15 @@ type controller struct {
 
 // New controller for indexer
 func New(p Params) Controller {
+	configs := entity.MonorepoConfigs{}
+	if err := p.Config.Get(entity.MonorepoConfigKey).Populate(&configs); err != nil {
+		panic(fmt.Sprintf("getting configuration for %q: %v", entity.MonorepoConfigKey, err))
+	}
+
 	c := &controller{
 		sessions:    p.Sessions,
 		logger:      p.Logger.With("plugin", _nameKey),
+		config:      configs,
 		documents:   p.Documents,
 		executor:    p.Executor,
 		ideGateway:  p.IdeGateway,
@@ -129,12 +139,10 @@ func (c *controller) StartupInfo(ctx context.Context) (ulspplugin.PluginInfo, er
 	}
 
 	return ulspplugin.PluginInfo{
-		Priorities: priorities,
-		Methods:    methods,
-		NameKey:    _nameKey,
-		RelevantRepos: map[entity.MonorepoName]struct{}{
-			entity.MonorepoNameJava: {},
-		},
+		Priorities:    priorities,
+		Methods:       methods,
+		NameKey:       _nameKey,
+		RelevantRepos: c.config.RelevantJavaRepos(),
 	}, nil
 }
 
@@ -148,8 +156,8 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 		c.indexer = make(map[uuid.UUID]Indexer)
 	}
 
-	// only support fievel indexer for java monorepo now
-	if strings.HasSuffix(s.WorkspaceRoot, _fievel) {
+	// Indexer is currently only supported in Java monorepositories
+	if c.config[s.Monorepo].EnableJavaSupport() {
 		if c.indexerOutputWriter == nil {
 			var err error
 			c.indexerOutputWriter, err = logfilewriter.SetupOutputWriter(c.outputWriterParams, _logFileKey)
@@ -157,7 +165,7 @@ func (c *controller) initialize(ctx context.Context, params *protocol.Initialize
 				return fmt.Errorf("setting up log file: %w", err)
 			}
 		}
-		c.indexer[s.UUID] = NewJavaIndexer(s, c.indexerOutputWriter)
+		c.indexer[s.UUID] = NewJavaIndexer(c.outputWriterParams.FS, s, c.indexerOutputWriter)
 	}
 	return nil
 }

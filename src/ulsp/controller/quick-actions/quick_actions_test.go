@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"testing"
 
+	"go.uber.org/config"
+
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
@@ -22,12 +24,17 @@ import (
 	"go.uber.org/zap"
 )
 
+const _monorepoNameGoCode entity.MonorepoName = "go-code"
+
 var _sampleRegex = regexp.MustCompile("sampleRegex")
 
 func TestNew(t *testing.T) {
+	mockConfig, _ := config.NewStaticProvider(map[string]interface{}{})
+
 	assert.NotPanics(t, func() {
 		New(Params{
 			Logger: zap.NewNop().Sugar(),
+			Config: mockConfig,
 		})
 	})
 }
@@ -46,21 +53,37 @@ func TestInitialize(t *testing.T) {
 	tests := []struct {
 		name     string
 		monorepo entity.MonorepoName
+		config   entity.MonorepoConfigs
 		client   string
 	}{
 		{
 			name:     "go",
-			monorepo: entity.MonorepoNameGoCode,
+			monorepo: "go-code",
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"go-code": {
+					Languages: []string{"go"},
+				},
+			},
 		},
 		{
 			name:     "java vs code",
-			monorepo: entity.MonorepoNameJava,
-			client:   "Visual Studio Code",
+			monorepo: "lm/fievel",
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
+			},
+			client: "Visual Studio Code",
 		},
 		{
 			name:     "java other",
-			monorepo: entity.MonorepoNameJava,
-			client:   "other",
+			monorepo: "lm/fievel",
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
+			},
+			client: "other",
 		},
 	}
 
@@ -78,6 +101,7 @@ func TestInitialize(t *testing.T) {
 				currentActionRanges: newActionRangeStore(),
 				sessions:            sessionRepository,
 				enabledActions:      make(map[uuid.UUID][]action.Action),
+				config:              tt.config,
 			}
 
 			result := &protocol.InitializeResult{}
@@ -86,7 +110,7 @@ func TestInitialize(t *testing.T) {
 			assert.Equal(t, result.Capabilities.CodeActionProvider, &protocol.CodeActionOptions{CodeActionKinds: []protocol.CodeActionKind{_codeActionKind}})
 
 			for _, a := range allActions {
-				if a.ShouldEnable(s) {
+				if a.ShouldEnable(s, tt.config[tt.monorepo]) {
 					assert.Contains(t, c.enabledActions[s.UUID], a)
 				} else {
 					assert.NotContains(t, c.enabledActions[s.UUID], a)
@@ -111,13 +135,19 @@ func TestInitialize(t *testing.T) {
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = "lm/fievel"
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 		c := controller{
 			currentActionRanges: newActionRangeStore(),
 			sessions:            sessionRepository,
 			enabledActions:      make(map[uuid.UUID][]action.Action),
+			// Currently only java adds actions with commands, so we can use that to trigger the duplicate command error.
+			config: map[entity.MonorepoName]entity.MonorepoConfigEntry{
+				"lm/fievel": {
+					Languages: []string{"java"},
+				},
+			},
 		}
 		result := &protocol.InitializeResult{}
 		err := c.initialize(ctx, &protocol.InitializeParams{}, result)
@@ -132,7 +162,7 @@ func TestInitialize(t *testing.T) {
 		s := &entity.Session{
 			UUID: factory.UUID(),
 		}
-		s.Monorepo = entity.MonorepoNameGoCode
+		s.Monorepo = _monorepoNameGoCode
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 		c := controller{
@@ -159,7 +189,7 @@ func TestRefreshAvailableCodeActions(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -275,7 +305,7 @@ func TestDidOpen(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -307,7 +337,7 @@ func TestDidSave(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -339,7 +369,7 @@ func TestDidClose(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil)
 
 	c := controller{
@@ -388,7 +418,7 @@ func TestCodeAction(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -487,7 +517,7 @@ func TestCodeLens(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	documents := docsyncmock.NewMockController(ctrl)
@@ -571,7 +601,7 @@ func TestExecuteCommand(t *testing.T) {
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
-	s.Monorepo = entity.MonorepoNameGoCode
+	s.Monorepo = _monorepoNameGoCode
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	action1 := quickactionmock.NewMockAction(ctrl)

@@ -452,6 +452,7 @@ class TestScipSync(unittest.TestCase):
             BUILD,
             scip_const.SCIP_TOOLING_TARGET,
             "--keep_going",
+            *scip_const.JAVA_VERSION_FLAGS,
         ]
         expected_cmd = [
             BAZEL,
@@ -461,6 +462,7 @@ class TestScipSync(unittest.TestCase):
             "--aspects",
             scip_const.ASPECT_SCIP_INDEX,
             scip_const.ASPECT_OUTPUT_GROUPS,
+            *scip_const.JAVA_VERSION_FLAGS,
         ]
         m_output.assert_has_calls(
             [
