@@ -9,6 +9,6 @@ files:
   # development.yaml, devpod.yaml, or local.yaml based on logic in ulsp-daemon/app/decorators.go
   - ${UBER_ENVIRONMENT:local}.yaml
   # user.yaml is the last file to be loaded, allowing user modification of specific keys.
-  # To read it from a separate directory, include multiple colon-separated paths in UBER_CONFIG_DIR
+  # To read it from a separate directory, include multiple colon-separated paths in ULSP_CONFIG_DIR
   # For example, /main/config/dir/config:/home/user/.devexp/config
   - user.yaml

@@ -30,7 +30,7 @@ go_test(
     srcs = ["decorators_test.go"],
     data = ["//src/ulsp/app/testdata/config"],
     embed = [":go_default_library"],
-    env = {"UBER_CONFIG_DIR": "testdata/config"},
+    env = {"ULSP_CONFIG_DIR": "testdata/config"},
     deps = [
         "//src/ulsp/internal/executor:go_default_library",
         "//src/ulsp/internal/executor:go_loader_gomock_library",

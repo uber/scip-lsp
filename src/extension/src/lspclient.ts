@@ -265,9 +265,9 @@ export class LSPClient {
       'INFO: Initializing a new server process. See output in "Uber LSP Server Initialization" channel.'
     )
 
-    // Bazel depends on the parent process environment, as well as additional UBER_CONFIG_DIR needed to launch service.
+    // Bazel depends on the parent process environment, as well as additional ULSP_CONFIG_DIR needed to launch service.
     const currentEnv = {...process.env}
-    currentEnv.UBER_CONFIG_DIR = this.serverLaunchConfig?.configDir
+    currentEnv.ULSP_CONFIG_DIR = this.serverLaunchConfig?.configDir
 
     // Process will be detached, so write stdout and stderr to a temporary file.
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ulsp-'))
