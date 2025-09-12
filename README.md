@@ -64,40 +64,11 @@ We will focus on a) automating these steps b) adjusting them to ensure they allo
 
 3. [If Indexing Code in Another Repo] Add necessary dependencies to the repo's MODULE.bazel
     ```
-    bazel_dep(name = "rules_jvm_external", version = "6.7")
-    local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-    local_repository(name = "scip_lsp", path = "/home/user/scip-lsp")
-
-    maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
-    maven.install(
-      artifacts = [
-          # SCIP Java dependencies
-          "com.sourcegraph:scip-java_2.13:0.10.4",
-          "com.sourcegraph:scip-semanticdb:0.10.4",
-          "com.sourcegraph:scip-java-proto:0.10.4",
-          "com.sourcegraph:semanticdb-java:0.10.4",
-          "com.sourcegraph:semanticdb-javac:0.10.4",
-
-          # Intellij dependencies
-          "com.jetbrains.intellij.java:java-decompiler-engine:jar:251.26094.121",
-
-          # Utility libraries
-          "commons-cli:commons-cli:1.5.0",
-          "commons-io:commons-io:2.11.0",
-          "org.jspecify:jspecify:0.3.0",
-          "org.ow2.asm:asm:9.7.1",
-          "org.projectlombok:lombok:1.18.38",
-
-          # Logging
-          "org.slf4j:slf4j-api:2.0.9",
-          "org.slf4j:slf4j-simple:2.0.9",
-      ],
-      repositories = [
-          "https://repo1.maven.org/maven2/",
-          "https://www.jetbrains.com/intellij-repository/releases",
-      ],
+    bazel_dep(name = "scip-lsp", version = "0.0.1", repo_name = "scip_lsp")
+    local_path_override(
+      module_name = "scip-lsp",
+      path = "/path/to/code/uber/scip-lsp",
     )
-    use_repo(maven, "maven")
     ```
 
 4. SCIP Index Generation
