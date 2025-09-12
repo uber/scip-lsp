@@ -64,9 +64,9 @@ We will focus on a) automating these steps b) adjusting them to ensure they allo
 
 3. [If Indexing Code in Another Repo] Add necessary dependencies to the repo's MODULE.bazel
     ```
-    bazel_dep(name = "scip-lsp", version = "0.0.1", repo_name = "scip_lsp")
+    bazel_dep(name = "scip_lsp", version = "0.0.1")
     local_path_override(
-      module_name = "scip-lsp",
+      module_name = "scip_lsp",
       path = "/path/to/code/uber/scip-lsp",
     )
     ```
