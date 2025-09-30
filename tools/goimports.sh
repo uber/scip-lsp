@@ -57,7 +57,7 @@ run_check() {
     # De-duplicate & sort
     printf "%b" "$unformatted" | sed '/^$/d' | sort -u
     echo ""
-    echo "Run 'bazel run //tools:goimports_fix' to fix formatting"
+    echo "Run 'bazel run //tools:goimports -- fix' to fix formatting"
     exit 1
   fi
   echo "All Go imports are properly formatted"
