@@ -319,6 +319,89 @@ func (p *partialScipRegistry) GetSymbolOccurrence(uri uri.URI, pos protocol.Posi
 	return nil, errors.New("not implemented")
 }
 
+// Implementation implements Registry.
+func (p *partialScipRegistry) Implementation(sourceURI uri.URI, pos protocol.Position) ([]protocol.Location, error) {
+	doc, err := p.Index.LoadDocument(p.uriToRelativePath(sourceURI))
+	if err != nil {
+		p.logger.Errorf("failed to load document %s: %s", sourceURI, err)
+		return nil, err
+	}
+	if doc == nil {
+		return nil, nil
+	}
+
+	sourceOccurrence := GetOccurrenceForPosition(doc.Occurrences, pos)
+	if sourceOccurrence == nil {
+		return nil, nil
+	}
+
+	// Local symbols typically don't have implementation relationships
+	if scip.IsLocalSymbol(sourceOccurrence.Symbol) {
+		return []protocol.Location{}, nil
+	}
+
+	locations := make([]protocol.Location, 0)
+
+	// Fast path: use reverse implementors index
+	implementors, err := p.Index.GetImplementationSymbols(sourceOccurrence.Symbol)
+	if err != nil {
+		p.logger.Errorf("failed to get implementing symbols for %s: %s", sourceOccurrence.Symbol, err)
+	} else if len(implementors) > 0 {
+		for _, implSym := range implementors {
+			implementingSymbol, err := model.ParseScipSymbol(implSym)
+			if err != nil {
+				p.logger.Errorf("failed to parse implementing symbol %s: %s", implSym, err)
+				continue
+			}
+			implOcc, err := p.GetSymbolDefinitionOccurrence(
+				mapper.ScipDescriptorsToModelDescriptors(implementingSymbol.Descriptors),
+				implementingSymbol.Package.Version,
+			)
+			if err != nil {
+				p.logger.Errorf("failed to get definition for implementing symbol %s: %s", implSym, err)
+				continue
+			}
+			if implOcc != nil && implOcc.Occurrence != nil {
+				locations = append(locations, *mapper.ScipOccurrenceToLocation(implOcc.Location, implOcc.Occurrence))
+			}
+		}
+		return locations, nil
+	}
+
+	// Fallback: traverse relationships on the abstract symbol if the reverse index is empty or there is error
+	symbolInformation, _, err := p.Index.GetSymbolInformation(sourceOccurrence.Symbol)
+	if err != nil {
+		p.logger.Errorf("failed to get symbol information for %s: %s", sourceOccurrence.Symbol, err)
+		return nil, err
+	}
+	if symbolInformation == nil {
+		return []protocol.Location{}, nil
+	}
+
+	for _, relationship := range symbolInformation.Relationships {
+		if relationship.IsImplementation {
+			implementingSymbol, err := model.ParseScipSymbol(relationship.Symbol)
+			if err != nil {
+				p.logger.Errorf("failed to parse implementing symbol %s: %s", relationship.Symbol, err)
+				continue
+			}
+			implOcc, err := p.GetSymbolDefinitionOccurrence(
+				mapper.ScipDescriptorsToModelDescriptors(implementingSymbol.Descriptors),
+				implementingSymbol.Package.Version,
+			)
+			if err != nil {
+				p.logger.Errorf("failed to get definition for implementing symbol %s: %s", relationship.Symbol, err)
+				continue
+			}
+			if implOcc != nil && implOcc.Occurrence != nil {
+				locations = append(locations, *mapper.ScipOccurrenceToLocation(implOcc.Location, implOcc.Occurrence))
+			}
+		}
+	}
+
+	return locations, nil
+}
+
 func (p *partialScipRegistry) uriToRelativePath(uri uri.URI) string {
 	rel, err := filepath.Rel(p.WorkspaceRoot, uri.Filename())
 	if err != nil {
