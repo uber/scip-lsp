@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tally "github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/factory"
 	"github.com/uber/scip-lsp/src/ulsp/gateway/ide-client/ideclientmock"

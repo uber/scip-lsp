@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/gofrs/uuid"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/internal/errors"
 	"github.com/uber/scip-lsp/src/ulsp/mapper"

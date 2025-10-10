@@ -3,7 +3,7 @@ package jdk
 import (
 	"context"
 
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	pb "github.com/uber/scip-lsp/idl/ulsp/service"
 	"github.com/uber/scip-lsp/src/ulsp/controller/jdk"
 	"github.com/uber/scip-lsp/src/ulsp/mapper"

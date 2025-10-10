@@ -11,7 +11,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	tally "github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/factory"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/idl/mock/jsonrpc2mock"
 	pb "github.com/uber/scip-lsp/idl/ulsp/service"
 	"github.com/uber/scip-lsp/src/ulsp/controller/ulsp-daemon/ulspdaemonmock"

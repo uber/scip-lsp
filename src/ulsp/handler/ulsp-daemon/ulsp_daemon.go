@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/gofrs/uuid"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	pb "github.com/uber/scip-lsp/idl/ulsp/service"
 	controller "github.com/uber/scip-lsp/src/ulsp/controller/ulsp-daemon"
 	"github.com/uber/scip-lsp/src/ulsp/entity"

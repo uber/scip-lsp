@@ -9,7 +9,7 @@ require (
 	github.com/sergi/go-diff v1.4.0
 	github.com/sourcegraph/scip v0.6.0
 	github.com/stretchr/testify v1.11.1
-	github.com/uber-go/tally v5.0.0+incompatible
+	github.com/uber-go/tally/v4 v4.1.17
 	go.lsp.dev/jsonrpc2 v0.10.0
 	go.lsp.dev/protocol v0.12.0
 	go.lsp.dev/uri v0.3.0
@@ -84,10 +84,10 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_golang v1.4.1 // indirect
+	github.com/prometheus/client_golang v1.11.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.9.1 // indirect
-	github.com/prometheus/procfs v0.0.9 // indirect
+	github.com/prometheus/common v0.26.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
@@ -101,6 +101,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tetratelabs/wazero v1.3.0 // indirect
 	github.com/twmb/murmur3 v1.1.8 // indirect
+	github.com/uber-go/tally v3.5.8+incompatible // indirect
 	github.com/uber/tchannel-go v1.34.4 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	go.lsp.dev/pkg v0.0.0-20210717090340-384b27a52fb2 // indirect
@@ -129,5 +130,3 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	honnef.co/go/tools v0.4.3 // indirect
 )
-
-replace github.com/getsentry/sentry-go => github.com/getsentry/sentry-go v0.13.0

@@ -103,7 +103,7 @@ use_repo(
     "com_github_sergi_go_diff",
     "com_github_sourcegraph_scip",
     "com_github_stretchr_testify",
-    "com_github_uber_go_tally",
+    "com_github_uber_go_tally_v4",
     "dev_lsp_go_jsonrpc2",
     "dev_lsp_go_protocol",
     "dev_lsp_go_uri",

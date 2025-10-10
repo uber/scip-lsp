@@ -15,7 +15,7 @@ import (
 	scipproto "github.com/sourcegraph/scip/bindings/go/scip"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/scip-lib/mapper"
 	"github.com/uber/scip-lsp/src/scip-lib/model"
 	"github.com/uber/scip-lsp/src/ulsp/controller/diagnostics/diagnosticsmock"

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/scip-lib/mapper"
 	"github.com/uber/scip-lsp/src/scip-lib/model"
 	diagnostics "github.com/uber/scip-lsp/src/ulsp/controller/diagnostics"
