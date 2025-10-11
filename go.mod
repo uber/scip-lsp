@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/uber-go/tally/v4 v4.1.17
 	go.lsp.dev/jsonrpc2 v0.10.0
-	go.lsp.dev/protocol v0.12.0
+	go.lsp.dev/protocol v0.12.1-0.20231213123720-eb80b884d9ca
 	go.lsp.dev/uri v0.3.0
 	go.uber.org/config v1.4.0
 	go.uber.org/fx v1.24.0
