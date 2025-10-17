@@ -4,8 +4,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "document.go",
-        "errors.go",
-        "jdk.go",
         "lsp.go",
         "lsp_lifecycle.go",
         "ulsp_daemon.go",
@@ -14,9 +12,6 @@ go_library(
     importpath = "github.com/uber/scip-lsp/src/ulsp/mapper",
     visibility = ["//src/ulsp:__subpackages__"],
     deps = [
-        "//idl/ulsp/model:modelpb_go_proto",
-        "//idl/ulsp/service:servicepb_go_proto",
-        "//src/ulsp/controller/jdk/types:go_default_library",
         "//src/ulsp/entity:go_default_library",
         "//src/ulsp/entity/ulsp-plugin:go_default_library",
         "//src/ulsp/internal/errors:go_default_library",
@@ -26,8 +21,6 @@ go_library(
         "@com_github_sergi_go_diff//diffmatchpatch:go_default_library",
         "@dev_lsp_go_jsonrpc2//:go_default_library",
         "@dev_lsp_go_protocol//:go_default_library",
-        "@org_uber_go_yarpc//encoding/protobuf:go_default_library",
-        "@org_uber_go_yarpc//yarpcerrors:go_default_library",
     ],
 )
 
@@ -35,8 +28,6 @@ go_test(
     name = "go_default_test",
     srcs = [
         "document_test.go",
-        "errors_test.go",
-        "jdk_test.go",
         "lsp_lifecycle_test.go",
         "lsp_test.go",
         "ulsp_daemon_test.go",
@@ -44,22 +35,14 @@ go_test(
     ],
     embed = [":go_default_library"],
     deps = [
-        "//idl/ulsp/model:modelpb_go_proto",
-        "//idl/ulsp/service:servicepb_go_proto",
-        "//src/ulsp/controller/jdk/types:go_default_library",
         "//src/ulsp/entity:go_default_library",
         "//src/ulsp/entity/ulsp-plugin:go_default_library",
         "//src/ulsp/factory:go_default_library",
-        "//src/ulsp/internal/errors:go_default_library",
         "//src/ulsp/model:go_default_library",
-        "@com_github_gofrs_uuid//:go_default_library",
         "@com_github_sergi_go_diff//diffmatchpatch:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
         "@dev_lsp_go_jsonrpc2//:go_default_library",
         "@dev_lsp_go_protocol//:go_default_library",
         "@org_uber_go_goleak//:go_default_library",
-        "@org_uber_go_yarpc//encoding/protobuf:go_default_library",
-        "@org_uber_go_yarpc//yarpcerrors:go_default_library",
     ],
 )

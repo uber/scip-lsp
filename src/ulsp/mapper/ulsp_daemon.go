@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	pb "github.com/uber/scip-lsp/idl/ulsp/service"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/internal/errors"
 	"github.com/uber/scip-lsp/src/ulsp/model"
@@ -67,13 +66,6 @@ func UUIDToSession(u uuid.UUID, c *jsonrpc2.Conn) *entity.Session {
 		UUID:        u,
 		Conn:        c,
 		UlspEnabled: true,
-	}
-}
-
-// SampleRequestToSampleResponse maps a SampleRequest to a SampleResponse
-func SampleRequestToSampleResponse(r *pb.SampleRequest) *pb.SampleResponse {
-	return &pb.SampleResponse{
-		Name: "Hello " + r.Name,
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	controller "github.com/uber/scip-lsp/src/ulsp/controller/ulsp-daemon"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/internal/jsonrpcfx"
-	"github.com/uber/scip-lsp/src/ulsp/mapper"
 	"go.lsp.dev/jsonrpc2"
 )
 
@@ -41,7 +40,9 @@ func New(ctrl controller.Controller, jsonrpcmod jsonrpcfx.JSONRPCModule, stats t
 
 // Create synchronously creates and saves a new UlspDaemon.
 func (h *handler) Sample(ctx context.Context, r *pb.SampleRequest) (*pb.SampleResponse, error) {
-	return mapper.SampleRequestToSampleResponse(r), nil
+	return &pb.SampleResponse{
+		Name: "Hello " + r.Name,
+	}, nil
 }
 
 type jsonRPCConnectionManager struct {
