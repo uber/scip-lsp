@@ -1128,10 +1128,91 @@ func TestGotoImplementation(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 
-	c, _ := getMockedController(t, ctrl)
-	err := c.gotoImplementation(ctx, nil, nil)
+	tests := []struct {
+		name        string
+		setupMocks  func(t *testing.T, c *controller, reg *MockRegistry)
+		expected    []protocol.LocationLink
+		expectedErr error
+	}{
+		{
+			name: "no implementations",
+			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
+				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 1, Character: 1}, false, nil)
+				documents := docsyncmock.NewMockController(ctrl)
+				documents.EXPECT().GetPositionMapper(gomock.Any(), gomock.Any()).Return(positionMapper, nil)
+				c.documents = documents
 
-	assert.NoError(t, err)
+				reg.EXPECT().Implementation(gomock.Any(), gomock.Any()).Return([]protocol.Location{}, nil)
+			},
+			expected: []protocol.LocationLink{},
+		},
+		{
+			name: "has error return",
+			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
+				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 1, Character: 1}, false, nil)
+				documents := docsyncmock.NewMockController(ctrl)
+				documents.EXPECT().GetPositionMapper(gomock.Any(), gomock.Any()).Return(positionMapper, nil)
+				c.documents = documents
+
+				reg.EXPECT().Implementation(gomock.Any(), gomock.Any()).Return(nil, errors.New("test error"))
+			},
+			expected:    []protocol.LocationLink{},
+			expectedErr: errors.New("test error"),
+		},
+		{
+			name: "normal return with origin selection",
+			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
+				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
+
+				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) { return pos, nil }).AnyTimes()
+				documents := docsyncmock.NewMockController(ctrl)
+				documents.EXPECT().GetPositionMapper(gomock.Any(), gomock.Any()).Return(positionMapper, nil).AnyTimes()
+				c.documents = documents
+
+
+				reg.EXPECT().Implementation(gomock.Any(), gomock.Any()).Return([]protocol.Location{
+					{
+						URI: uri.URI("file:///impl.go"),
+						Range: protocol.Range{
+							Start: protocol.Position{Line: 10, Character: 3},
+							End:   protocol.Position{Line: 10, Character: 9},
+						},
+					},
+				}, nil)
+
+				reg.EXPECT().Hover(gomock.Any(), gomock.Any()).Return("", &model.Occurrence{Range: []int32{2, 2, 3}}, nil)
+			},
+			expected: []protocol.LocationLink{
+				{
+					TargetURI:            uri.URI("file:///impl.go"),
+					TargetRange:          protocol.Range{Start: protocol.Position{Line: 10, Character: 3}, End: protocol.Position{Line: 10, Character: 9}},
+					TargetSelectionRange: protocol.Range{Start: protocol.Position{Line: 10, Character: 3}, End: protocol.Position{Line: 10, Character: 9}},
+					OriginSelectionRange: &protocol.Range{Start: protocol.Position{Line: 2, Character: 2}, End: protocol.Position{Line: 2, Character: 3}},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, reg := getMockedController(t, ctrl)
+			tt.setupMocks(t, &c, reg)
+
+			req := &protocol.ImplementationParams{TextDocumentPositionParams: getMockTextDocumentPositionParams()}
+			res := []protocol.LocationLink{}
+			err := c.gotoImplementation(ctx, req, &res)
+
+			if tt.expectedErr != nil {
+				assert.ErrorContains(t, err, tt.expectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, res)
+			}
+		})
+	}
 }
 
 func TestReferences(t *testing.T) {

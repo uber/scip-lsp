@@ -640,8 +640,49 @@ func (c *controller) gotoTypeDefinition(ctx context.Context, params *protocol.Ty
 }
 
 func (c *controller) gotoImplementation(ctx context.Context, params *protocol.ImplementationParams, result *[]protocol.LocationLink) error {
-	// TODO: Implement code navigation
-	// https://t3.uberinternal.com/browse/IDE-642
+	sesh, err := c.sessions.GetFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	reg := c.registries[sesh.WorkspaceRoot]
+	if reg == nil {
+		return nil
+	}
+
+	mappedPosition, err := c.getBasePosition(ctx, params.TextDocument, params.Position)
+	if err != nil {
+		return err
+	} else if mappedPosition == nil {
+		return nil
+	}
+
+	baseLocations, err := reg.Implementation(params.TextDocument.URI, *mappedPosition)
+	if err != nil {
+		return fmt.Errorf("failed to get implementations: %w", err)
+	}
+
+	if len(baseLocations) == 0 {
+		return nil
+	}
+
+	var originSel *protocol.Range
+	if _, occ, err := reg.Hover(params.TextDocument.URI, *mappedPosition); err == nil && occ != nil {
+		rng := mapper.ScipToProtocolRange(occ.Range)
+		mapped := c.getLatestRange(ctx, params.TextDocument, rng)
+		originSel = &mapped
+	}
+
+	for _, implLoc := range baseLocations {
+		l := protocol.LocationLink{TargetURI: implLoc.URI}
+		latestRange := c.getLatestRange(ctx, protocol.TextDocumentIdentifier{URI: implLoc.URI}, implLoc.Range)
+		l.TargetRange = latestRange
+		l.TargetSelectionRange = latestRange
+		if originSel != nil {
+			l.OriginSelectionRange = originSel
+		}
+		*result = append(*result, l)
+	}
+
 	return nil
 }
 
