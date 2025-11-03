@@ -23,6 +23,8 @@ import (
 	"github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/factory"
+	"github.com/uber/scip-lsp/src/scip-lib/registry"
+	"github.com/uber/scip-lsp/src/scip-lib/registry/registrymock"
 	"github.com/uber/scip-lsp/src/ulsp/gateway/ide-client/ideclientmock"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
 	notifier "github.com/uber/scip-lsp/src/ulsp/internal/persistent-notifier"
@@ -112,8 +114,8 @@ func TestInitialize(t *testing.T) {
 	dir := t.TempDir()
 	scipDir := path.Join(dir, ".scip")
 
-	newScipCtl := func(fs *fsmock.MockUlspFS, reg *MockRegistry, monorepo entity.MonorepoName, loadFromDir bool, sessionFail bool, createScipDir bool) controller {
-		regs := map[string]Registry{}
+	newScipCtl := func(fs *fsmock.MockUlspFS, reg *registrymock.MockRegistry, monorepo entity.MonorepoName, loadFromDir bool, sessionFail bool, createScipDir bool) controller {
+		regs := map[string]registry.Registry{}
 
 		s.Monorepo = monorepo
 		s.WorkspaceRoot = dir
@@ -148,7 +150,7 @@ func TestInitialize(t *testing.T) {
 			watchCloser:   make(chan bool),
 			initialLoad:   make(chan bool, 1),
 			loadedIndices: make(map[string]string),
-			newScipRegistry: func(workspaceRoot string, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot string, indexFolder string) registry.Registry {
 				return reg
 			},
 			indexNotifier: NewIndexNotifier(notMgrMock),
@@ -158,7 +160,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("not enabled", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 
 		c := newScipCtl(fsMock, regMock, _monorepoNameJava, false, false, true)
@@ -174,7 +176,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("no scip files", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		fsMock := fsmock.NewMockUlspFS(ctrl)
@@ -194,7 +196,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("failed to add watcher", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 		fsMock.EXPECT().MkdirAll(gomock.Any()).Return(errors.New("failed"))
 
@@ -210,7 +212,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("failed to create scip dir", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 		fsMock.EXPECT().MkdirAll(gomock.Any()).Return(errors.New("failed to create scip dir"))
 
@@ -226,7 +228,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("with scip files", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		regMock.EXPECT().LoadIndexFile(gomock.Any()).Return(nil)
@@ -251,7 +253,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("file open error doesn't fail", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().LoadIndexFile(gomock.Any()).Return(errors.New("file not found"))
@@ -276,7 +278,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("LoadIndex error doesn't fail", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().LoadIndexFile(gomock.Any()).Return(errors.New("invalid scip file"))
@@ -301,7 +303,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("ReadDir error doesn't fail", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 		fsMock.EXPECT().MkdirAll(gomock.Any()).Return(nil)
@@ -326,7 +328,7 @@ func TestInitialize(t *testing.T) {
 			NewMockDirEntry("sample.scip"),
 		}, nil)
 		fsMock.EXPECT().ReadFile(gomock.Any()).Return([]byte("sampleSha"), nil)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		mockReg.EXPECT().LoadConcurrency().Return(1)
 		mockReg.EXPECT().LoadIndexFile(gomock.Any()).Return(nil)
@@ -387,8 +389,8 @@ func TestGotoDeclaration(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func getMockedController(t *testing.T, ctrl *gomock.Controller) (controller, *MockRegistry) {
-	reg := NewMockRegistry(ctrl)
+func getMockedController(t *testing.T, ctrl *gomock.Controller) (controller, *registrymock.MockRegistry) {
+	reg := registrymock.NewMockRegistry(ctrl)
 	s := &entity.Session{
 		UUID: factory.UUID(),
 	}
@@ -397,7 +399,7 @@ func getMockedController(t *testing.T, ctrl *gomock.Controller) (controller, *Mo
 	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
 	return controller{
-		registries: map[string]Registry{
+		registries: map[string]registry.Registry{
 			"/some/path": reg,
 		},
 		sessions: sessionRepository,
@@ -438,13 +440,13 @@ func TestGotoDefinition(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setupMocks  func(t *testing.T, c *controller, reg *MockRegistry)
+		setupMocks  func(t *testing.T, c *controller, reg *registrymock.MockRegistry)
 		expected    []protocol.LocationLink
 		expectedErr error
 	}{
 		{
 			name: "no symbol data",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, bool, error) {
 					return pos, false, nil
@@ -459,7 +461,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "has error return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, bool, error) {
 					return pos, false, nil
@@ -475,7 +477,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "has location",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, bool, error) {
 					return pos, false, nil
@@ -519,7 +521,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "nil definition occurrence",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, bool, error) {
 					return pos, false, nil
@@ -561,7 +563,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "shifted position in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
@@ -589,7 +591,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "new position in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, true, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -600,7 +602,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "shifted position error",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{}, false, errors.New("test error"))
 				documents := docsyncmock.NewMockController(ctrl)
@@ -612,7 +614,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "shifted position in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 
@@ -648,7 +650,7 @@ func TestGotoDefinition(t *testing.T) {
 		},
 		{
 			name: "shifted position errors in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 
@@ -712,13 +714,13 @@ func TestDocumentSymbol(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setupMocks  func(t *testing.T, c *controller, reg *MockRegistry)
+		setupMocks  func(t *testing.T, c *controller, reg *registrymock.MockRegistry)
 		expected    []protocol.DocumentSymbol
 		expectedErr error
 	}{
 		{
 			name: "empty symbol",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
 					return pos, nil
@@ -733,7 +735,7 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			name: "has error return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
 					return pos, nil
@@ -748,7 +750,7 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			name: "has symbol",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
 					return pos, nil
@@ -800,7 +802,7 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			name: "shifted symbol positions in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				// Mock position mapping to shift positions by 10 lines and 5 characters
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
@@ -856,7 +858,7 @@ func TestDocumentSymbol(t *testing.T) {
 		},
 		{
 			name: "position mapping errors in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, error) {
 					return protocol.Position{}, errors.New("failed to map position")
@@ -937,11 +939,11 @@ func TestHover(t *testing.T) {
 		name        string
 		expected    *protocol.Hover
 		expectedErr error
-		setupMocks  func(t *testing.T, c *controller, reg *MockRegistry)
+		setupMocks  func(t *testing.T, c *controller, reg *registrymock.MockRegistry)
 	}{
 		{
 			name: "no symbol data",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 0, Character: 0}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -954,7 +956,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "has error return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 0, Character: 0}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -968,7 +970,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "normal return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 0, Character: 0}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1001,7 +1003,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "shifted position in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1034,7 +1036,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "shifted position in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(pos protocol.Position) (protocol.Position, bool, error) {
 					return pos, false, nil
@@ -1068,7 +1070,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "new position",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, true, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1079,7 +1081,7 @@ func TestHover(t *testing.T) {
 		},
 		{
 			name: "shifted position error",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{}, false, errors.New("test error"))
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1140,13 +1142,13 @@ func TestReferences(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		setupMocks  func(t *testing.T, c *controller, reg *MockRegistry)
+		setupMocks  func(t *testing.T, c *controller, reg *registrymock.MockRegistry)
 		expected    []protocol.Location
 		expectedErr error
 	}{
 		{
 			name: "no references",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 1, Character: 1}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1159,7 +1161,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "has error return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 1, Character: 1}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1173,7 +1175,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "normal return",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 1, Character: 1}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1199,7 +1201,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "shifted symbol in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1225,7 +1227,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "new position in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, true, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1236,7 +1238,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "shifted symbol in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1261,7 +1263,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "shifted position error in request",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{}, false, errors.New("test error"))
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1273,7 +1275,7 @@ func TestReferences(t *testing.T) {
 		},
 		{
 			name: "shifted position errors in response",
-			setupMocks: func(t *testing.T, c *controller, reg *MockRegistry) {
+			setupMocks: func(t *testing.T, c *controller, reg *registrymock.MockRegistry) {
 				positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
 				positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).Return(protocol.Position{Line: 2, Character: 2}, false, nil)
 				documents := docsyncmock.NewMockController(ctrl)
@@ -1345,7 +1347,7 @@ func TestIndexReloading(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotMgr.EXPECT().StartNotification(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("No notifier"))
 
@@ -1356,13 +1358,13 @@ func TestIndexReloading(t *testing.T) {
 		operationDone := make(chan struct{})
 
 		c := &controller{
-			registries:     map[string]Registry{},
+			registries:     map[string]registry.Registry{},
 			logger:         zap.NewNop().Sugar(),
 			fs:             mockFs,
 			watcher:        w,
 			loadedIndices:  make(map[string]string),
 			debounceTimers: make(map[string]*time.Timer),
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1406,7 +1408,7 @@ func TestIndexReloading(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotMgr.EXPECT().StartNotification(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("No notifier"))
 
@@ -1417,13 +1419,13 @@ func TestIndexReloading(t *testing.T) {
 		operationDone := make(chan struct{})
 
 		c := &controller{
-			registries:     map[string]Registry{},
+			registries:     map[string]registry.Registry{},
 			logger:         zap.NewNop().Sugar(),
 			fs:             mockFs,
 			watcher:        w,
 			loadedIndices:  make(map[string]string),
 			debounceTimers: make(map[string]*time.Timer),
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1477,7 +1479,7 @@ func TestIndexReloading(t *testing.T) {
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
 		mockFs.EXPECT().ReadFile(gomock.Any()).Return([]byte("sampleSha"), nil).AnyTimes()
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockReg.EXPECT().LoadIndexFile(gomock.Any()).Return(nil).AnyTimes()
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotMgr.EXPECT().StartNotification(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("No notifier"))
@@ -1487,13 +1489,13 @@ func TestIndexReloading(t *testing.T) {
 		assert.NoError(t, err)
 
 		c := &controller{
-			registries:     map[string]Registry{},
+			registries:     map[string]registry.Registry{},
 			logger:         zap.NewNop().Sugar(),
 			fs:             mockFs,
 			watcher:        w,
 			loadedIndices:  make(map[string]string),
 			debounceTimers: make(map[string]*time.Timer),
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1530,7 +1532,7 @@ func TestIndexReloading(t *testing.T) {
 		mockFs.EXPECT().ReadFile(gomock.Any()).DoAndReturn(func(arg interface{}) ([]byte, error) {
 			return []byte("sampleSha"), nil
 		}).Times(1)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotHndlr := notifiermock.NewMockNotificationHandler(ctrl)
 		mockNotHndlr.EXPECT().Done(gomock.Any()).DoAndReturn(func(ctx context.Context) bool {
@@ -1568,7 +1570,7 @@ func TestIndexReloading(t *testing.T) {
 				},
 			}},
 			sessions:      sessionRepository,
-			registries:    map[string]Registry{},
+			registries:    map[string]registry.Registry{},
 			logger:        zap.NewNop().Sugar(),
 			initialLoad:   make(chan bool, 1),
 			fs:            mockFs,
@@ -1576,7 +1578,7 @@ func TestIndexReloading(t *testing.T) {
 			loadedIndices: make(map[string]string),
 			diagnostics:   diagnostics,
 			documents:     documents,
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			debounceTimers: make(map[string]*time.Timer),
@@ -1621,7 +1623,7 @@ func TestHandleChangesErrorConfig(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockFs := fsmock.NewMockUlspFS(ctrl)
-	mockReg := NewMockRegistry(ctrl)
+	mockReg := registrymock.NewMockRegistry(ctrl)
 	sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 	sessionRepository := repositorymock.NewMockRepository(ctrl)
 	s := &entity.Session{
@@ -1638,7 +1640,7 @@ func TestHandleChangesErrorConfig(t *testing.T) {
 	c := &controller{
 		configs:  map[entity.MonorepoName]entity.MonorepoConfigEntry{},
 		sessions: sessionRepository,
-		registries: map[string]Registry{
+		registries: map[string]registry.Registry{
 			dir: mockReg,
 		},
 		logger:      zap.NewNop().Sugar(),
@@ -1670,7 +1672,7 @@ func TestHandleChangesErrorSessionsObject(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockFs := fsmock.NewMockUlspFS(ctrl)
-	mockReg := NewMockRegistry(ctrl)
+	mockReg := registrymock.NewMockRegistry(ctrl)
 	sampleWorkspaceRoot := path.Join("/sample/home/", string(_monorepoNameJava))
 	sessionRepository := repositorymock.NewMockRepository(ctrl)
 	s := &entity.Session{
@@ -1687,7 +1689,7 @@ func TestHandleChangesErrorSessionsObject(t *testing.T) {
 	c := &controller{
 		configs:  map[entity.MonorepoName]entity.MonorepoConfigEntry{},
 		sessions: sessionRepository,
-		registries: map[string]Registry{
+		registries: map[string]registry.Registry{
 			dir: mockReg,
 		},
 		logger:      zap.NewNop().Sugar(),
@@ -1731,7 +1733,7 @@ func TestNotifier(t *testing.T) {
 
 		fsMock := fsmock.NewMockUlspFS(ctrl)
 		fsMock.EXPECT().ReadDir(gomock.Any()).Return([]os.DirEntry{}, nil)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockReg.EXPECT().LoadConcurrency().Return(1)
 		mockReg.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
@@ -1746,12 +1748,12 @@ func TestNotifier(t *testing.T) {
 				},
 			}},
 			sessions:      sessionRepository,
-			registries:    map[string]Registry{},
+			registries:    map[string]registry.Registry{},
 			logger:        zap.NewNop().Sugar(),
 			initialLoad:   make(chan bool, 1),
 			fs:            fsMock,
 			loadedIndices: make(map[string]string),
-			newScipRegistry: func(workspaceRoot string, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot string, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1775,7 +1777,7 @@ func TestNotifier(t *testing.T) {
 		s.Monorepo = _monorepoNameJava
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().LoadIndexFile(gomock.Any()).Return(nil)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
@@ -1803,12 +1805,12 @@ func TestNotifier(t *testing.T) {
 				},
 			}},
 			sessions:      sessionRepository,
-			registries:    map[string]Registry{},
+			registries:    map[string]registry.Registry{},
 			logger:        zap.NewNop().Sugar(),
 			initialLoad:   make(chan bool, 1),
 			fs:            fsMock,
 			loadedIndices: make(map[string]string),
-			newScipRegistry: func(workspaceRoot string, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot string, indexFolder string) registry.Registry {
 				return regMock
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1831,7 +1833,7 @@ func TestNotifier(t *testing.T) {
 		s.WorkspaceRoot = sampleWorkspaceRoot
 		sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
-		regMock := NewMockRegistry(ctrl)
+		regMock := registrymock.NewMockRegistry(ctrl)
 		regMock.EXPECT().LoadConcurrency().Return(1)
 		regMock.EXPECT().SetDocumentLoadedCallback(gomock.Any())
 		regMock.EXPECT().LoadIndexFile(gomock.Any()).Return(errors.New("failed to open"))
@@ -1861,12 +1863,12 @@ func TestNotifier(t *testing.T) {
 				},
 			}},
 			sessions:    sessionRepository,
-			registries:  map[string]Registry{},
+			registries:  map[string]registry.Registry{},
 			logger:      zap.NewNop().Sugar(),
 			initialLoad: make(chan bool, 1),
 			fs:          fsMock,
 			ideGateway:  mockGateway,
-			newScipRegistry: func(workspaceRoot string, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot string, indexFolder string) registry.Registry {
 				return regMock
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -1884,7 +1886,7 @@ func TestNotifier(t *testing.T) {
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
 		mockFs.EXPECT().ReadFile(gomock.Any()).Return([]byte("sampleSha"), nil)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotHndlr := notifiermock.NewMockNotificationHandler(ctrl)
 		mockNotHndlr.EXPECT().Done(gomock.Any()).DoAndReturn(func(ctx context.Context) bool {
@@ -1921,7 +1923,7 @@ func TestNotifier(t *testing.T) {
 				},
 			}},
 			sessions:      sessionRepository,
-			registries:    map[string]Registry{},
+			registries:    map[string]registry.Registry{},
 			logger:        zap.NewNop().Sugar(),
 			initialLoad:   make(chan bool, 1),
 			fs:            mockFs,
@@ -1929,7 +1931,7 @@ func TestNotifier(t *testing.T) {
 			loadedIndices: make(map[string]string),
 			diagnostics:   diagnostics,
 			documents:     documents,
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			debounceTimers: make(map[string]*time.Timer),
@@ -1992,7 +1994,7 @@ func TestNotifier(t *testing.T) {
 		mockFs.EXPECT().ReadFile(gomock.Any()).DoAndReturn(func(arg interface{}) ([]byte, error) {
 			return []byte("sampleSha"), nil
 		})
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 		mockNotMgr := notifiermock.NewMockNotificationManager(ctrl)
 		mockNotHndlr := notifiermock.NewMockNotificationHandler(ctrl)
 		mockNotHndlr.EXPECT().Done(gomock.Any()).Return()
@@ -2034,7 +2036,7 @@ func TestNotifier(t *testing.T) {
 					},
 				},
 			}},
-			registries: map[string]Registry{
+			registries: map[string]registry.Registry{
 				dir: mockReg,
 			},
 			sessions:       sessionRepository,
@@ -2047,7 +2049,7 @@ func TestNotifier(t *testing.T) {
 			diagnostics:    diagnostics,
 			documents:      documents,
 			debounceTimers: make(map[string]*time.Timer),
-			newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+			newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 				return mockReg
 			},
 			indexNotifier: NewIndexNotifier(mockNotMgr),
@@ -2089,7 +2091,7 @@ func TestGetSha(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 
 		dir := t.TempDir()
 		sampleWorkspaceRoot := path.Join(dir, string(_monorepoNameJava))
@@ -2108,7 +2110,7 @@ func TestGetSha(t *testing.T) {
 					},
 				},
 			}},
-			registries: map[string]Registry{
+			registries: map[string]registry.Registry{
 				sampleWorkspaceRoot: mockReg,
 			},
 			logger:        zap.NewNop().Sugar(),
@@ -2130,7 +2132,7 @@ func TestGetSha(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		mockFs := fsmock.NewMockUlspFS(ctrl)
-		mockReg := NewMockRegistry(ctrl)
+		mockReg := registrymock.NewMockRegistry(ctrl)
 
 		dir := t.TempDir()
 		sampleWorkspaceRoot := path.Join(dir, string(_monorepoNameJava))
@@ -2149,7 +2151,7 @@ func TestGetSha(t *testing.T) {
 					},
 				},
 			}},
-			registries: map[string]Registry{
+			registries: map[string]registry.Registry{
 				sampleWorkspaceRoot: mockReg,
 			},
 			logger:        zap.NewNop().Sugar(),
@@ -2175,7 +2177,7 @@ func TestControllerGetDocumentSymbols(t *testing.T) {
 		uri         string
 		sessionErr  error
 		overrideWSR string
-		registry    Registry
+		registry    registry.Registry
 		expected    []*model.SymbolOccurrence
 		expectedErr error
 	}{
@@ -2198,8 +2200,8 @@ func TestControllerGetDocumentSymbols(t *testing.T) {
 			name:       "registry returns document symbols",
 			uri:        "file:///test.go",
 			sessionErr: nil,
-			registry: func() Registry {
-				reg := NewMockRegistry(gomock.NewController(t))
+			registry: func() registry.Registry {
+				reg := registrymock.NewMockRegistry(gomock.NewController(t))
 				reg.EXPECT().DocumentSymbols(uri.URI("file:///test.go")).Return([]*model.SymbolOccurrence{
 					{
 						Info: &model.SymbolInformation{
@@ -2257,7 +2259,7 @@ func TestControllerGetDocumentSymbols(t *testing.T) {
 
 			c := &controller{
 				sessions: sessionRepository,
-				registries: map[string]Registry{
+				registries: map[string]registry.Registry{
 					"/some/path": tt.registry,
 				},
 				logger: zap.NewNop().Sugar(),
@@ -2281,7 +2283,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 		name        string
 		descriptors []model.Descriptor
 		overrideWSR string
-		setupMocks  func(*gomock.Controller) (controller, *MockRegistry)
+		setupMocks  func(*gomock.Controller) (controller, *registrymock.MockRegistry)
 		expected    *model.SymbolOccurrence
 		expectedErr error
 	}{
@@ -2298,7 +2300,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				},
 			},
 			overrideWSR: "",
-			setupMocks: func(ctrl *gomock.Controller) (controller, *MockRegistry) {
+			setupMocks: func(ctrl *gomock.Controller) (controller, *registrymock.MockRegistry) {
 				sessionRepo := repositorymock.NewMockRepository(ctrl)
 				sessionRepo.EXPECT().GetFromContext(gomock.Any()).Return(nil, errors.New("no session")).AnyTimes()
 				return controller{
@@ -2312,7 +2314,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 		{
 			name:        "no registry",
 			descriptors: []model.Descriptor{},
-			setupMocks: func(ctrl *gomock.Controller) (controller, *MockRegistry) {
+			setupMocks: func(ctrl *gomock.Controller) (controller, *registrymock.MockRegistry) {
 				sessionRepo := repositorymock.NewMockRepository(ctrl)
 				s := &entity.Session{
 					UUID: factory.UUID(),
@@ -2322,7 +2324,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				return controller{
 					sessions:   sessionRepo,
 					logger:     zap.NewNop().Sugar(),
-					registries: map[string]Registry{},
+					registries: map[string]registry.Registry{},
 				}, nil
 			},
 			expected:    nil,
@@ -2340,7 +2342,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 					Suffix: scip.Descriptor_Type,
 				},
 			},
-			setupMocks: func(ctrl *gomock.Controller) (controller, *MockRegistry) {
+			setupMocks: func(ctrl *gomock.Controller) (controller, *registrymock.MockRegistry) {
 				sessionRepo := repositorymock.NewMockRepository(ctrl)
 				s := &entity.Session{
 					UUID: factory.UUID(),
@@ -2348,7 +2350,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				s.WorkspaceRoot = "/some/path"
 				sessionRepo.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
-				reg := NewMockRegistry(ctrl)
+				reg := registrymock.NewMockRegistry(ctrl)
 				reg.EXPECT().GetSymbolDefinitionOccurrence([]model.Descriptor{
 					{
 						Name:   "test",
@@ -2371,7 +2373,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				return controller{
 					sessions: sessionRepo,
 					logger:   zap.NewNop().Sugar(),
-					registries: map[string]Registry{
+					registries: map[string]registry.Registry{
 						"/some/path": reg,
 					},
 				}, reg
@@ -2399,7 +2401,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 					Suffix: scip.Descriptor_Type,
 				},
 			},
-			setupMocks: func(ctrl *gomock.Controller) (controller, *MockRegistry) {
+			setupMocks: func(ctrl *gomock.Controller) (controller, *registrymock.MockRegistry) {
 				sessionRepo := repositorymock.NewMockRepository(ctrl)
 				s := &entity.Session{
 					UUID: factory.UUID(),
@@ -2407,7 +2409,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				s.WorkspaceRoot = "/some/path"
 				sessionRepo.EXPECT().GetFromContext(gomock.Any()).Return(s, nil).AnyTimes()
 
-				reg := NewMockRegistry(ctrl)
+				reg := registrymock.NewMockRegistry(ctrl)
 				reg.EXPECT().GetSymbolDefinitionOccurrence([]model.Descriptor{
 					{
 						Name:   "test",
@@ -2422,7 +2424,7 @@ func TestControllerGetSymbolDefinitionOccurrence(t *testing.T) {
 				return controller{
 					sessions: sessionRepo,
 					logger:   zap.NewNop().Sugar(),
-					registries: map[string]Registry{
+					registries: map[string]registry.Registry{
 						"/some/path": reg,
 					},
 				}, reg
@@ -2677,13 +2679,13 @@ func TestGetLatestPosition(t *testing.T) {
 func TestController_DidOpen(t *testing.T) {
 	tests := []struct {
 		name          string
-		setupMocks    func(mockSesh *repositorymock.MockRepository, mockReg *MockRegistry) (*entity.Session, error)
+		setupMocks    func(mockSesh *repositorymock.MockRepository, mockReg *registrymock.MockRegistry) (*entity.Session, error)
 		params        *protocol.DidOpenTextDocumentParams
 		expectedError string
 	}{
 		{
 			name: "successful did open",
-			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *MockRegistry) (*entity.Session, error) {
+			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *registrymock.MockRegistry) (*entity.Session, error) {
 				sesh := &entity.Session{
 					WorkspaceRoot: "/test/workspace",
 				}
@@ -2700,7 +2702,7 @@ func TestController_DidOpen(t *testing.T) {
 		},
 		{
 			name: "session error",
-			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *MockRegistry) (*entity.Session, error) {
+			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *registrymock.MockRegistry) (*entity.Session, error) {
 				mockSesh.EXPECT().GetFromContext(gomock.Any()).Return(nil, assert.AnError)
 				return nil, assert.AnError
 			},
@@ -2714,7 +2716,7 @@ func TestController_DidOpen(t *testing.T) {
 		},
 		{
 			name: "no registry for workspace",
-			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *MockRegistry) (*entity.Session, error) {
+			setupMocks: func(mockSesh *repositorymock.MockRepository, mockReg *registrymock.MockRegistry) (*entity.Session, error) {
 				sesh := &entity.Session{
 					WorkspaceRoot: "/different/workspace",
 				}
@@ -2734,13 +2736,13 @@ func TestController_DidOpen(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			mockSesh := repositorymock.NewMockRepository(ctrl)
-			mockReg := NewMockRegistry(ctrl)
+			mockReg := registrymock.NewMockRegistry(ctrl)
 
 			_, _ = tt.setupMocks(mockSesh, mockReg)
 
 			c := &controller{
 				sessions: mockSesh,
-				registries: map[string]Registry{
+				registries: map[string]registry.Registry{
 					"/test/workspace": mockReg,
 				},
 			}

@@ -1,3 +1,4 @@
+load("@bazel_gomock//rules:gomock.bzl", "gomock")
 load("@rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -17,6 +18,32 @@ go_library(
         "@dev_lsp_go_protocol//:go_default_library",
         "@dev_lsp_go_uri//:go_default_library",
         "@org_uber_go_zap//:go_default_library",
+    ],
+)
+
+gomock(
+    name = "registrymock",
+    out = "registry_mock_for_test.go",
+    interfaces = [
+        "Registry",
+    ],
+    library = ":go_default_library",
+    mockgen_tool = "@org_uber_go_mock//mockgen",
+    package = "registrymock",
+    self_package = "github.com/uber/scip-lsp/src/scip-lib/registry/registrymock",
+)
+
+go_library(
+    name = "go_registry_gomock_library",
+    srcs = [":registrymock"],
+    importpath = "github.com/uber/scip-lsp/src/scip-lib/registry/registrymock",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":go_default_library",
+        "//src/scip-lib/model:go_default_library",
+        "@dev_lsp_go_protocol//:go_default_library",
+        "@dev_lsp_go_uri//:go_default_library",
+        "@org_uber_go_mock//gomock:go_default_library",
     ],
 )
 
