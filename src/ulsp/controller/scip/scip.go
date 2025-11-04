@@ -19,7 +19,6 @@ import (
 	ulspplugin "github.com/uber/scip-lsp/src/ulsp/entity/ulsp-plugin"
 	ideclient "github.com/uber/scip-lsp/src/ulsp/gateway/ide-client"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs"
-	"github.com/uber/scip-lsp/src/scip-lib/registry"
 	notifier "github.com/uber/scip-lsp/src/ulsp/internal/persistent-notifier"
 	ulsp_mapper "github.com/uber/scip-lsp/src/ulsp/mapper"
 	"github.com/uber/scip-lsp/src/ulsp/repository/session"

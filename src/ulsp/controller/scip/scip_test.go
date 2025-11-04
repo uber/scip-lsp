@@ -25,8 +25,6 @@ import (
 	"github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/factory"
-	"github.com/uber/scip-lsp/src/scip-lib/registry"
-	"github.com/uber/scip-lsp/src/scip-lib/registry/registrymock"
 	"github.com/uber/scip-lsp/src/ulsp/gateway/ide-client/ideclientmock"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
 	notifier "github.com/uber/scip-lsp/src/ulsp/internal/persistent-notifier"
