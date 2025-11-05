@@ -1172,7 +1172,6 @@ func TestGotoImplementation(t *testing.T) {
 				documents.EXPECT().GetPositionMapper(gomock.Any(), gomock.Any()).Return(positionMapper, nil).AnyTimes()
 				c.documents = documents
 
-
 				reg.EXPECT().Implementation(gomock.Any(), gomock.Any()).Return([]protocol.Location{
 					{
 						URI: uri.URI("file:///impl.go"),
