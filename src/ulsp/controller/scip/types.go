@@ -43,6 +43,8 @@ type Registry interface {
 	Definition(uri uri.URI, loc protocol.Position) (*model.SymbolOccurrence, *model.SymbolOccurrence, error)
 	// References returns the locations a symbol is referenced at in the entire index
 	References(uri uri.URI, loc protocol.Position) ([]protocol.Location, error)
+	// Implementation returns the locations where a symbol is implemented
+	Implementation(uri uri.URI, loc protocol.Position) ([]protocol.Location, error)
 	// Hover returns the hover information for a given position, as well as it's occurrence
 	Hover(uri uri.URI, loc protocol.Position) (string, *model.Occurrence, error)
 	// DocumentSymbols returns the document symbols for a given document
