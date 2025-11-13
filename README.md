@@ -1,6 +1,6 @@
 # scip-lsp
 
-A language agnostic language server that uses [SCIP](github.com/sourcegraph/scip) as it's index source. Built with Bazel for Bazel.
+A language agnostic language server that uses [SCIP](https://github.com/sourcegraph/scip) as it's index source. Built with Bazel for Bazel.
 
 ## Overview
 
