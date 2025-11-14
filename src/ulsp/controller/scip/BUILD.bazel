@@ -5,7 +5,6 @@ go_library(
     name = "go_default_library",
     srcs = [
         "consume.go",
-        "partial_registry.go",
         "scip.go",
         "scip_notify.go",
         "types.go",
@@ -15,7 +14,6 @@ go_library(
     deps = [
         "//src/scip-lib/mapper:go_default_library",
         "//src/scip-lib/model:go_default_library",
-        "//src/scip-lib/partialloader:go_default_library",
         "//src/scip-lib/registry:go_default_library",
         "//src/ulsp/controller/diagnostics:go_default_library",
         "//src/ulsp/controller/doc-sync:go_default_library",
@@ -48,7 +46,6 @@ go_test(
     name = "go_default_test",
     srcs = [
         "consume_test.go",
-        "partial_registry_test.go",
         "scip_notify_test.go",
         "scip_test.go",
         "types_test.go",
@@ -59,7 +56,6 @@ go_test(
     deps = [
         "//src/scip-lib/mapper:go_default_library",
         "//src/scip-lib/model:go_default_library",
-        "//src/scip-lib/partialloader:go_loader_gomock_library",
         "//src/scip-lib/registry:go_default_library",
         "//src/scip-lib/registry:go_registry_gomock_library",
         "//src/ulsp/controller/diagnostics:go_diagnostics_gomock_library",
@@ -82,7 +78,6 @@ go_test(
         "@org_uber_go_config//:go_default_library",
         "@org_uber_go_mock//gomock:go_default_library",
         "@org_uber_go_zap//:go_default_library",
-        "@org_uber_go_zap//zaptest:go_default_library",
         "@rules_go//go/tools/bazel:go_default_library",
     ],
 )
