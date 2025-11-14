@@ -8,8 +8,8 @@ The Extension will attempt to launch its own instance of the ulsp service from t
 1. Add this settings `"uber.uberLanguageServer.serverDevelopmentMode": true` into your VS Code settings.json to prevent relaunch of ulsp daemon by vscode-devportal extension.
 2. Check for any existing running ulsp process (`ps -aux | grep ulsp`) and terminate if necessary.
 3. Launch the service by running one of the following from the root of the service directory.
-   - `$ ULSP_ENVIRONMENT=development ULSP_CONFIG_DIR=$PWD/config bazel run .`
-   - `$ ULSP_ENVIRONMENT=development ULSP_CONFIG_DIR=$PWD/config bazel debug .`
+   - `$ ULSP_ENVIRONMENT=development ULSP_CONFIG_DIR=$PWD/config bazel run ulsp-daemon`
+   - `$ ULSP_ENVIRONMENT=development ULSP_CONFIG_DIR=$PWD/config bazel debug ulsp-daemon`
 4. Open a separate IDE session with the Uber Dev Portal extension installed.  The IDE will connect to the running instance and begin sending requests to ulsp, which will appear in the terminal output from ulsp when running it in development mode.  The service will pause at breakpoints if launched in debug mode.
 5. If you make changes to ulsp and restart it, you can trigger the IDE to re-connect to the updated service by running `Cmd+Shift+P -> Developer: Reload Window` which will cause the IDE to re-establish the LSP connection.
 
