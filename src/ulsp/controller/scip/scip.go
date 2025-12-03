@@ -118,7 +118,7 @@ func New(p Params) (Controller, error) {
 		indexNotifier:  NewIndexNotifier(notifier.NewNotificationManager(notificationManagerParams)),
 		newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 			p.Logger.Infof("Creating new SCIP registry for %q, index folder %q", workspaceRoot, indexFolder)
-			return NewPartialScipRegistry(workspaceRoot, indexFolder, p.Logger.Named("fast-loader"))
+			return registry.NewPartialScipRegistry(workspaceRoot, indexFolder, p.Logger.Named("fast-loader"))
 		},
 	}, nil
 }
