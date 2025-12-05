@@ -163,12 +163,12 @@ def _index_sources(
         ctx,
         target,
         sources_file,
-        sources_folders = None
+        sources_folders = None,
         inputs = depset(),
         additional_classpath = None,
         flow_prefix = "_index_sources"):
-    if source_folders == None:
-        source_folders = []
+    if sources_folders == None:
+        sources_folders = []
     if additional_classpath == None:
         additional_classpath = []
 
@@ -287,7 +287,7 @@ scip_java_aspect = aspect(
     _scip_java_aspect,
     attrs = {
         "_javac_semanticdb_plugin": attr.label(
-            default = Label("@maven//:com_sourcegraph_semanticdb_javac"),
+            default = Label("@scip_lsp_maven//:com_sourcegraph_semanticdb_javac"),
             cfg = "exec",
         ),
         "_lombok_extractor": attr.label(
