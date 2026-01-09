@@ -22,9 +22,9 @@ import (
 	"github.com/uber/scip-lsp/src/scip-lib/registry/registrymock"
 	"github.com/uber/scip-lsp/src/ulsp/controller/diagnostics/diagnosticsmock"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
-	"github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"github.com/uber/scip-lsp/src/ulsp/factory"
+	docsyncmock "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync/docsyncmock"
 	"github.com/uber/scip-lsp/src/ulsp/gateway/ide-client/ideclientmock"
 	"github.com/uber/scip-lsp/src/ulsp/internal/fs/fsmock"
 	notifier "github.com/uber/scip-lsp/src/ulsp/internal/persistent-notifier"
@@ -1130,10 +1130,74 @@ func TestGotoImplementation(t *testing.T) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
 
-	c, _ := getMockedController(t, ctrl)
-	err := c.gotoImplementation(ctx, nil, nil)
+	// Unit-test gotoImplementation behavior using mocks (no dependency on index testdata content).
+	workspaceRoot := "/some/path"
+	sesh := &entity.Session{WorkspaceRoot: workspaceRoot}
 
-	assert.NoError(t, err)
+	sessionRepository := repositorymock.NewMockRepository(ctrl)
+	sessionRepository.EXPECT().GetFromContext(gomock.Any()).Return(sesh, nil).AnyTimes()
+
+	positionMapper := docsyncmock.NewMockPositionMapper(ctrl)
+	positionMapper.EXPECT().MapCurrentPositionToBase(gomock.Any()).DoAndReturn(func(p protocol.Position) (protocol.Position, bool, error) {
+		return p, false, nil
+	}).AnyTimes()
+	positionMapper.EXPECT().MapBasePositionToCurrent(gomock.Any()).DoAndReturn(func(p protocol.Position) (protocol.Position, error) {
+		return p, nil
+	}).AnyTimes()
+
+	documents := docsyncmock.NewMockController(ctrl)
+	documents.EXPECT().GetPositionMapper(gomock.Any(), gomock.Any()).Return(positionMapper, nil).AnyTimes()
+
+	regMock := registrymock.NewMockRegistry(ctrl)
+
+	const absSymbol = "scip-go gomod code.test.internal/devexp/test_management/tracing 0f67d80e60274b77875a241c43ef980bc9ffe0d8 `code.test.internal/devexp/test_management/tracing`/PartialIndex#"
+	const implSymbol = "scip-go gomod code.test.internal/devexp/test_management/tracing 0f67d80e60274b77875a241c43ef980bc9ffe0d8 `code.test.internal/devexp/test_management/tracing`/index#"
+
+	sourceURI := uri.File("file:///source.go")
+	sourcePos := protocol.Position{Line: 1, Character: 1}
+	sourceOcc := &model.Occurrence{
+		Symbol: absSymbol,
+		Range:  []int32{1, 1, 1, 2},
+	}
+
+	regMock.EXPECT().Hover(sourceURI, gomock.Any()).Return("", sourceOcc, nil)
+	regMock.EXPECT().Implementations(absSymbol).Return([]string{implSymbol}, nil)
+
+	implParsed, err := model.ParseScipSymbol(implSymbol)
+	require.NoError(t, err)
+
+	implDefURI := uri.File("file:///impl.go")
+	regMock.EXPECT().
+		GetSymbolDefinitionOccurrence(mapper.ScipDescriptorsToModelDescriptors(implParsed.Descriptors), implParsed.Package.Version).
+		Return(&model.SymbolOccurrence{
+			Info:     &model.SymbolInformation{Symbol: implSymbol},
+			Location: implDefURI,
+			Occurrence: &model.Occurrence{
+				Symbol:      implSymbol,
+				SymbolRoles: int32(scip.SymbolRole_Definition),
+				Range:       []int32{10, 0, 10, 4},
+			},
+		}, nil)
+
+	c := &controller{
+		sessions:  sessionRepository,
+		documents: documents,
+		registries: map[string]registry.Registry{
+			workspaceRoot: regMock,
+		},
+		logger: zap.NewNop().Sugar(),
+	}
+
+	req := &protocol.ImplementationParams{
+		TextDocumentPositionParams: protocol.TextDocumentPositionParams{
+			TextDocument: protocol.TextDocumentIdentifier{URI: sourceURI},
+			Position:     sourcePos,
+		},
+	}
+	var res []protocol.LocationLink
+	require.NoError(t, c.gotoImplementation(ctx, req, &res))
+	require.Len(t, res, 1)
+	require.Equal(t, implDefURI, res[0].TargetURI)
 }
 
 func TestReferences(t *testing.T) {
