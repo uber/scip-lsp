@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/scip-lib/mapper"
 	"github.com/uber/scip-lsp/src/scip-lib/model"
@@ -665,8 +667,88 @@ func (c *controller) gotoTypeDefinition(ctx context.Context, params *protocol.Ty
 }
 
 func (c *controller) gotoImplementation(ctx context.Context, params *protocol.ImplementationParams, result *[]protocol.LocationLink) error {
-	// TODO: Implement code navigation
-	// https://t3.uberinternal.com/browse/IDE-642
+	if params == nil || result == nil {
+		return nil
+	}
+	sesh, err := c.sessions.GetFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	reg := c.registries[sesh.WorkspaceRoot]
+	if reg == nil {
+		return nil
+	}
+
+	mappedPosition, err := c.getBasePosition(ctx, params.TextDocument, params.Position)
+	if err != nil {
+		return err
+	} else if mappedPosition == nil {
+		return nil
+	}
+
+	// Use Hover() as the lightweight way to get the occurrence at the requested position.
+	// It returns the occurrence even if there is no hover documentation.
+	_, occ, err := reg.Hover(params.TextDocument.URI, *mappedPosition)
+	if err != nil {
+		return fmt.Errorf("failed to get symbol occurrence: %w", err)
+	}
+	if occ == nil {
+		return nil
+	}
+	if scip.IsLocalSymbol(occ.Symbol) {
+		// Local symbols can't participate in cross-file implementation relationships.
+		return nil
+	}
+
+	implSymbols, err := reg.Implementations(occ.Symbol)
+	if err != nil {
+		return fmt.Errorf("failed to get implementations: %w", err)
+	}
+	if len(implSymbols) == 0 {
+		return nil
+	}
+
+	// Stabilize output ordering (Implementations() is backed by a map).
+	sort.Strings(implSymbols)
+
+	rng := c.getLatestRange(ctx, params.TextDocument, mapper.ScipToProtocolRange(occ.Range))
+	seen := make(map[protocol.DocumentURI]struct{}, len(implSymbols))
+	for _, implSym := range implSymbols {
+		sy, err := model.ParseScipSymbol(implSym)
+		if err != nil {
+			// Skip malformed symbols rather than failing the request.
+			c.logger.Warnf("failed to parse implementation symbol %q: %v", implSym, err)
+			continue
+		}
+
+		def, err := reg.GetSymbolDefinitionOccurrence(mapper.ScipDescriptorsToModelDescriptors(sy.Descriptors), sy.Package.Version)
+		if err != nil {
+			return fmt.Errorf("failed to resolve implementation definition for %q: %w", implSym, err)
+		}
+		if def == nil {
+			continue
+		}
+
+		// Deduplicate by target URI (LSP accepts duplicates but it's noisy).
+		if _, ok := seen[def.Location]; ok {
+			continue
+		}
+		seen[def.Location] = struct{}{}
+
+		l := protocol.LocationLink{
+			TargetURI:            def.Location,
+			OriginSelectionRange: &rng,
+		}
+
+		if def.Occurrence != nil {
+			rng := c.getLatestRange(ctx, protocol.TextDocumentIdentifier{URI: def.Location}, mapper.ScipToProtocolRange(def.Occurrence.Range))
+			l.TargetRange = rng
+			l.TargetSelectionRange = rng
+		}
+
+		*result = append(*result, l)
+	}
+
 	return nil
 }
 

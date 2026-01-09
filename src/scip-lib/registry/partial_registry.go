@@ -210,6 +210,12 @@ func (p *partialScipRegistry) References(sourceURI uri.URI, pos protocol.Positio
 	return locations, nil
 }
 
+// Implementations returns all known implementing symbols for the given (typically abstract/interface) symbol.
+// Note: this is based on SymbolInformation.Relationships in loaded indices.
+func (p *partialScipRegistry) Implementations(symbol string) ([]string, error) {
+	return p.Index.Implementations(symbol)
+}
+
 func (p *partialScipRegistry) Hover(uri uri.URI, pos protocol.Position) (string, *model.Occurrence, error) {
 	doc, err := p.Index.LoadDocument(p.uriToRelativePath(uri))
 	if err != nil {
