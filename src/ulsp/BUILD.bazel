@@ -1,5 +1,16 @@
 load("@rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 load(":version.bzl", "version")
+load("//src/ulsp/rules:simple_gen.bzl", "simple_gen")
+
+# Simple generated library that mimics glue behavior
+simple_gen(
+    name = "generated_lib",
+    importpath = "github.com/uber/scip-lsp/src/ulsp/generated",
+    package_name = "generated",
+    deps = [
+        "@org_uber_go_fx//:go_default_library",
+    ],
+)
 
 go_library(
     name = "go_default_library",
@@ -7,6 +18,7 @@ go_library(
     importpath = "github.com/uber/scip-lsp/src/ulsp",
     visibility = ["//visibility:private"],
     deps = [
+        ":generated_lib",
         "//src/ulsp/app:go_default_library",
         "@org_uber_go_fx//:go_default_library",
     ],
