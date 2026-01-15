@@ -287,7 +287,7 @@ scip_java_aspect = aspect(
     _scip_java_aspect,
     attrs = {
         "_javac_semanticdb_plugin": attr.label(
-            default = Label("@maven//:com_sourcegraph_semanticdb_javac"),
+            default = Label("@scip_lsp_maven//:com_sourcegraph_semanticdb_javac"),
             cfg = "exec",
         ),
         "_lombok_extractor": attr.label(

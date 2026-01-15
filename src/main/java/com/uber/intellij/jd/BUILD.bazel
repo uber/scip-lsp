@@ -5,7 +5,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "@maven//:com_jetbrains_intellij_java_java_decompiler_engine",
+        "@scip_lsp_maven//:com_jetbrains_intellij_java_java_decompiler_engine",
     ],
 )
 
