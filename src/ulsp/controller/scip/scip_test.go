@@ -151,6 +151,9 @@ func TestInitialize(t *testing.T) {
 			initialLoad:   make(chan bool, 1),
 			loadedIndices: make(map[string]string),
 			newScipRegistry: func(workspaceRoot string, indexFolder string) registry.Registry {
+				if reg == nil {
+					return nil
+				}
 				return reg
 			},
 			indexNotifier: NewIndexNotifier(notMgrMock),

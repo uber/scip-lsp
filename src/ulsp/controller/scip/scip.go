@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -93,16 +92,6 @@ func (c *controller) configForMonorepo(monorepo entity.MonorepoName) (cfg entity
 	return entity.MonorepoConfigEntry{}, false, false
 }
 
-func isNilRegistry(r registry.Registry) bool {
-	if r == nil {
-		return true
-	}
-	v := reflect.ValueOf(r)
-	// When a typed nil pointer is stored in an interface, the interface itself is non-nil.
-	// We must explicitly check whether the underlying value is nil.
-	return (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && v.IsNil()
-}
-
 // New creates a new controller for lint.
 func New(p Params) (Controller, error) {
 	configs := entity.MonorepoConfigs{}
@@ -153,7 +142,7 @@ func (c *controller) createNewScipRegistry(workspaceRoot string, monorepo entity
 		indexFolder = path.Join(workspaceRoot, c.configs[monorepo].Scip.Directories[0])
 	}
 	reg := c.newScipRegistry(workspaceRoot, indexFolder)
-	if isNilRegistry(reg) {
+	if reg == nil {
 		c.logger.Warnf("Failed to create SCIP registry for %q (index folder %q)", workspaceRoot, indexFolder)
 		return nil
 	}
