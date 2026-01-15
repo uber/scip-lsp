@@ -10,7 +10,7 @@ import (
 	"go.uber.org/config"
 
 	"github.com/gofrs/uuid"
-	tally "github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
 	userguidance "github.com/uber/scip-lsp/src/ulsp/controller/user-guidance"
 	"github.com/uber/scip-lsp/src/ulsp/entity"

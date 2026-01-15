@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	controller "github.com/uber/scip-lsp/src/ulsp/controller/ulsp-daemon"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
 	"go.lsp.dev/jsonrpc2"

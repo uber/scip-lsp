@@ -9,9 +9,10 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/scip-lib/mapper"
 	"github.com/uber/scip-lsp/src/scip-lib/model"
+	"github.com/uber/scip-lsp/src/scip-lib/registry"
 	diagnostics "github.com/uber/scip-lsp/src/ulsp/controller/diagnostics"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
 	"github.com/uber/scip-lsp/src/ulsp/entity"
@@ -67,7 +68,7 @@ type controller struct {
 	stats           tally.Scope
 	documents       docsync.Controller
 	diagnostics     diagnostics.Controller
-	registries      map[string]Registry
+	registries      map[string]registry.Registry
 	registriesMu    sync.Mutex
 	watcher         *fsnotify.Watcher
 	once            sync.Once
@@ -75,7 +76,7 @@ type controller struct {
 	initialLoad     chan bool
 	watchCloser     chan bool
 	loadedIndices   map[string]string
-	newScipRegistry func(workspaceRoot, indexFolder string) Registry
+	newScipRegistry func(workspaceRoot, indexFolder string) registry.Registry
 	debounceTimers  map[string]*time.Timer
 	debounceMu      sync.Mutex
 	indexNotifier   *IndexNotifier
@@ -107,7 +108,7 @@ func New(p Params) (Controller, error) {
 		stats:          p.Stats.SubScope("scip"),
 		documents:      p.PluginDocSync,
 		diagnostics:    p.PluginDiagnostics,
-		registries:     make(map[string]Registry),
+		registries:     make(map[string]registry.Registry),
 		watcher:        watcher,
 		fs:             p.FS,
 		initialLoad:    make(chan bool, 1),
@@ -115,14 +116,14 @@ func New(p Params) (Controller, error) {
 		loadedIndices:  make(map[string]string),
 		debounceTimers: make(map[string]*time.Timer),
 		indexNotifier:  NewIndexNotifier(notifier.NewNotificationManager(notificationManagerParams)),
-		newScipRegistry: func(workspaceRoot, indexFolder string) Registry {
+		newScipRegistry: func(workspaceRoot, indexFolder string) registry.Registry {
 			p.Logger.Infof("Creating new SCIP registry for %q, index folder %q", workspaceRoot, indexFolder)
-			return NewPartialScipRegistry(workspaceRoot, indexFolder, p.Logger.Named("fast-loader"))
+			return registry.NewPartialScipRegistry(workspaceRoot, indexFolder, p.Logger.Named("fast-loader"))
 		},
 	}, nil
 }
 
-func (c *controller) createNewScipRegistry(workspaceRoot string, monorepo entity.MonorepoName) Registry {
+func (c *controller) createNewScipRegistry(workspaceRoot string, monorepo entity.MonorepoName) registry.Registry {
 	indexFolder := path.Join(workspaceRoot, ".scip")
 	if len(c.configs[monorepo].Scip.Directories) > 0 {
 		indexFolder = path.Join(workspaceRoot, c.configs["_default"].Scip.Directories[0])

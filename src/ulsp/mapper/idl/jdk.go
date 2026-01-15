@@ -1,4 +1,4 @@
-package mapper
+package idl
 
 import (
 	modelpb "github.com/uber/scip-lsp/idl/ulsp/model"

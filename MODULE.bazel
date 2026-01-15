@@ -8,7 +8,7 @@ bazel_dep(name = "rules_jvm_external", version = "6.8")
 bazel_dep(name = "contrib_rules_jvm", version = "0.27.0")
 bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_python", version = "1.5.1")
-bazel_dep(name = "rules_go", version = "0.55.1")
+bazel_dep(name = "rules_go", version = "0.57.0")
 bazel_dep(name = "gazelle", version = "0.43.0")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 
@@ -38,6 +38,12 @@ maven.install(
         "org.slf4j:slf4j-api:2.0.9",
         "org.slf4j:slf4j-simple:2.0.9",
     ],
+    # Specify other Bzlmod modules that contribute to the same maven repository
+    # to suppress the rules_jvm_external multi-module warning during resolution.
+    known_contributing_modules = [
+        "protobuf",
+        "scip-lsp",
+    ],
     repositories = [
         "https://repo1.maven.org/maven2/",
         "https://www.jetbrains.com/intellij-repository/releases",
@@ -56,6 +62,12 @@ maven.install(
         "org.mockito:mockito-inline:5.2.0",
         "org.assertj:assertj-core:3.27.3",
     ],
+    # Declare known contributing modules for the shared maven repository so
+    # rules_jvm_external doesn't warn about cross-module contributions.
+    known_contributing_modules = [
+        "protobuf",
+        "scip-lsp",
+    ],
     repositories = [
         "https://repo1.maven.org/maven2/",
     ],
@@ -63,14 +75,13 @@ maven.install(
 use_repo(maven, "scip_lsp_maven", "scip_lsp_maven_test")
 
 # Python toolchain setup
-python = use_extension("@rules_python//python/extensions:python_toolchains.bzl", "python")
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     python_version = "3.11",
 )
 use_repo(python, "python_3_11")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
-
 pip.parse(
     hub_name = "scip_lsp_pip_deps",
     python_version = "3.11",  # MUST match the python_version in python.toolchain
@@ -93,7 +104,7 @@ use_repo(
     "com_github_sergi_go_diff",
     "com_github_sourcegraph_scip",
     "com_github_stretchr_testify",
-    "com_github_uber_go_tally",
+    "com_github_uber_go_tally_v4",
     "dev_lsp_go_jsonrpc2",
     "dev_lsp_go_protocol",
     "dev_lsp_go_uri",

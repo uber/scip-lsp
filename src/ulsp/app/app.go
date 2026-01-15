@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/ulsp/gateway"
 	notifier "github.com/uber/scip-lsp/src/ulsp/gateway/ide-client"
 	"github.com/uber/scip-lsp/src/ulsp/handler"

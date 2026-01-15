@@ -410,3 +410,52 @@ func TestLoadIndexWithPreloadedDocument(t *testing.T) {
 	assert.NotNil(t, info)
 	assert.Equal(t, docPath, foundDocPath)
 }
+
+// New tests for reverse implementors index
+func TestMergeImplementors(t *testing.T) {
+	idx := &PartialLoadedIndex{
+		ImplementorsBySymbol: make(map[string]map[string]struct{}),
+	}
+	local := map[string]map[string]struct{}{
+		"abs#Symbol": {
+			"impl#A": {},
+			"impl#B": {},
+		},
+	}
+	idx.mergeImplementors(local)
+	set := idx.ImplementorsBySymbol["abs#Symbol"]
+	if assert.NotNil(t, set) {
+		_, okA := set["impl#A"]
+		_, okB := set["impl#B"]
+		assert.True(t, okA)
+		assert.True(t, okB)
+	}
+}
+
+func TestImplementations(t *testing.T) {
+	idx := &PartialLoadedIndex{
+		ImplementorsBySymbol: make(map[string]map[string]struct{}),
+	}
+	idx.ImplementorsBySymbol["abs#Symbol"] = map[string]struct{}{
+		"impl#B": {},
+		"impl#A": {},
+	}
+	list, err := idx.Implementations("abs#Symbol")
+	assert.NoError(t, err)
+	assert.Contains(t, list, "impl#A")
+	assert.Contains(t, list, "impl#B")
+
+	empty, err := idx.Implementations("unknown#Symbol")
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(empty))
+}
+
+func TestLoadIndexWithImplementors(t *testing.T) {
+	index := NewPartialLoadedIndex("../testdata")
+	err := index.LoadIndexFile(filepath.Join("../testdata", "index.scip"))
+	assert.NoError(t, err)
+	symbol := "scip-go gomod code.uber.internal/devexp/test_management/tracing 0f67d80e60274b77875a241c43ef980bc9ffe0d8 `code.uber.internal/devexp/test_management/tracing`/PartialIndex#"
+	implementors, err := index.Implementations(symbol)
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"scip-go gomod code.uber.internal/devexp/test_management/tracing 0f67d80e60274b77875a241c43ef980bc9ffe0d8 `code.uber.internal/devexp/test_management/tracing`/index#"}, implementors)
+}

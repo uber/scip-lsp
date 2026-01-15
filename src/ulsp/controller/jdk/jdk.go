@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
-	"github.com/uber-go/tally"
+	tally "github.com/uber-go/tally/v4"
 	"github.com/uber/scip-lsp/src/scip-lib/model"
 	docsync "github.com/uber/scip-lsp/src/ulsp/controller/doc-sync"
 	"github.com/uber/scip-lsp/src/ulsp/controller/jdk/types"
