@@ -162,6 +162,7 @@ func TestInitialize(t *testing.T) {
 
 		regMock := registrymock.NewMockRegistry(ctrl)
 		fsMock := fsmock.NewMockUlspFS(ctrl)
+		fsMock.EXPECT().MkdirAll(gomock.Any()).Return(nil)
 
 		c := newScipCtl(fsMock, regMock, _monorepoNameJava, false, false, true)
 
@@ -358,6 +359,7 @@ func TestInitialize(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		fsMock := fsmock.NewMockUlspFS(ctrl)
+		fsMock.EXPECT().MkdirAll(gomock.Any()).Return(nil)
 		c := newScipCtl(fsMock, nil, "lm/fievel", true, false, true)
 
 		err := c.initialize(ctx, &protocol.InitializeParams{}, &protocol.InitializeResult{})

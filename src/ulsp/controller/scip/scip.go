@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -82,6 +83,26 @@ type controller struct {
 	indexNotifier   *IndexNotifier
 }
 
+func (c *controller) configForMonorepo(monorepo entity.MonorepoName) (cfg entity.MonorepoConfigEntry, ok bool, isDefault bool) {
+	if moCfg, ok := c.configs[monorepo]; ok {
+		return moCfg, true, false
+	}
+	if defaultCfg, ok := c.configs["_default"]; ok {
+		return defaultCfg, true, true
+	}
+	return entity.MonorepoConfigEntry{}, false, false
+}
+
+func isNilRegistry(r registry.Registry) bool {
+	if r == nil {
+		return true
+	}
+	v := reflect.ValueOf(r)
+	// When a typed nil pointer is stored in an interface, the interface itself is non-nil.
+	// We must explicitly check whether the underlying value is nil.
+	return (v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface) && v.IsNil()
+}
+
 // New creates a new controller for lint.
 func New(p Params) (Controller, error) {
 	configs := entity.MonorepoConfigs{}
@@ -125,13 +146,17 @@ func New(p Params) (Controller, error) {
 
 func (c *controller) createNewScipRegistry(workspaceRoot string, monorepo entity.MonorepoName) registry.Registry {
 	indexFolder := path.Join(workspaceRoot, ".scip")
-	if len(c.configs[monorepo].Scip.Directories) > 0 {
+	if len(c.configs["_default"].Scip.Directories) > 0 {
 		indexFolder = path.Join(workspaceRoot, c.configs["_default"].Scip.Directories[0])
 	}
 	if len(c.configs[monorepo].Scip.Directories) > 0 {
 		indexFolder = path.Join(workspaceRoot, c.configs[monorepo].Scip.Directories[0])
 	}
 	reg := c.newScipRegistry(workspaceRoot, indexFolder)
+	if isNilRegistry(reg) {
+		c.logger.Warnf("Failed to create SCIP registry for %q (index folder %q)", workspaceRoot, indexFolder)
+		return nil
+	}
 
 	reg.SetDocumentLoadedCallback(func(doc *model.Document) {
 		docURI := reg.GetURI(doc.RelativePath)
@@ -232,6 +257,11 @@ func (c *controller) loadFromDirectories(ctx context.Context, dirs []string) ([]
 	if reg == nil {
 		c.logger.Infof("Initializing registry for %q", s.WorkspaceRoot)
 		reg = c.createNewScipRegistry(s.WorkspaceRoot, s.Monorepo)
+		if reg == nil {
+			c.logger.Warnf("Skipping SCIP loading for %q: failed to initialize registry", s.WorkspaceRoot)
+			c.registriesMu.Unlock()
+			return failed, nil
+		}
 		c.registries[s.WorkspaceRoot] = reg
 	}
 	c.registriesMu.Unlock()
@@ -358,10 +388,17 @@ func (c *controller) initialized(ctx context.Context, params *protocol.Initializ
 	})
 
 	if c.watcher != nil {
-		if _, ok := c.configs[sesh.Monorepo]; !ok {
+		scipDirs := []string{}
+		cfg, ok, isDefault := c.configForMonorepo(sesh.Monorepo)
+		if isDefault {
+			scipDirs = cfg.Scip.Directories
+			c.logger.Infof("No SCIP configuration found for repo %q, using default config", sesh.Monorepo)
+		} else if !ok {
+			c.logger.Infof("No SCIP configuration found for repo %q, skipping SCIP loading", sesh.Monorepo)
 			return nil
+		} else {
+			scipDirs = cfg.Scip.Directories
 		}
-		scipDirs := c.configs[sesh.Monorepo].Scip.Directories
 		for _, d := range scipDirs {
 			scipDirPath := path.Join(sesh.WorkspaceRoot, d)
 			err = c.fs.MkdirAll(scipDirPath)
@@ -371,7 +408,7 @@ func (c *controller) initialized(ctx context.Context, params *protocol.Initializ
 			}
 			err = c.watcher.Add(scipDirPath)
 			if err != nil {
-				c.logger.Warnf("Failed to watch for changes in %d: %v", sesh.WorkspaceRoot, err)
+				c.logger.Warnf("Failed to watch for changes in %q: %v", sesh.WorkspaceRoot, err)
 				return err
 			}
 		}
@@ -384,13 +421,11 @@ func (c *controller) initialized(ctx context.Context, params *protocol.Initializ
 }
 
 func (c *controller) loadIndices(ctx context.Context, session *entity.Session) error {
-	mCfg, ok := c.configs[session.Monorepo]
-	defaultCfg, defOk := c.configs["_default"]
-	if !ok && defOk {
-		mCfg = defaultCfg
-		c.logger.Infof("No SCIP configuration found for repo, using default %q", session.Monorepo)
+	mCfg, ok, isDefault := c.configForMonorepo(session.Monorepo)
+	if ok && isDefault {
+		c.logger.Infof("No SCIP configuration found for repo %q, using default config", session.Monorepo)
 	} else if !ok {
-		c.logger.Infof("No SCIP configuration found for repo, skipping SCIP loading")
+		c.logger.Infof("No SCIP configuration found for repo %q, skipping SCIP loading", session.Monorepo)
 		return nil
 	}
 
@@ -602,6 +637,9 @@ func (c *controller) hover(ctx context.Context, params *protocol.HoverParams, re
 	if reg == nil {
 		return nil
 	}
+	if result == nil {
+		return nil
+	}
 
 	mappedPosition, err := c.getBasePosition(ctx, params.TextDocument, params.Position)
 	if err != nil {
@@ -617,9 +655,6 @@ func (c *controller) hover(ctx context.Context, params *protocol.HoverParams, re
 
 	if len(docs) > 0 {
 		rng := mapper.ScipToProtocolRange(occ.Range)
-		if result == nil {
-			*result = protocol.Hover{}
-		}
 		if result.Range == nil {
 			mappedRange := c.getLatestRange(ctx, params.TextDocument, rng)
 			result.Range = &mappedRange
