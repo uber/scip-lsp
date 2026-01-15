@@ -163,12 +163,12 @@ def _index_sources(
         ctx,
         target,
         sources_file,
-        sources_folders = None
+        sources_folders = None,
         inputs = depset(),
         additional_classpath = None,
         flow_prefix = "_index_sources"):
-    if source_folders == None:
-        source_folders = []
+    if sources_folders == None:
+        sources_folders = []
     if additional_classpath == None:
         additional_classpath = []
 
