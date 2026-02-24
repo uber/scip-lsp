@@ -164,6 +164,18 @@ func TestScipSymbolKindToDocumentSymbolKind(t *testing.T) {
 		expected protocol.SymbolKind
 	}{
 		{
+			symKind:  scip.SymbolInformation_AbstractMethod,
+			expected: protocol.SymbolKindMethod,
+		},
+		{
+			symKind:  scip.SymbolInformation_Getter,
+			expected: protocol.SymbolKindProperty,
+		},
+		{
+			symKind:  scip.SymbolInformation_Parameter,
+			expected: protocol.SymbolKindVariable,
+		},
+		{
 			symKind:  scip.SymbolInformation_Method,
 			expected: protocol.SymbolKindMethod,
 		},
