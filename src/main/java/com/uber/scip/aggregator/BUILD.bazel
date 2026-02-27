@@ -5,15 +5,15 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     runtime_deps = [
-        "@maven//:org_slf4j_slf4j_simple",
+        "@scip_lsp_maven//:org_slf4j_slf4j_simple",
     ],
     deps = [
         "//src/main/java/com/uber/scip/aggregator/scip",
-        "@maven//:com_sourcegraph_scip_semanticdb",
-        "@maven//:commons_cli_commons_cli",
-        "@maven//:commons_io_commons_io",
-        "@maven//:org_jspecify_jspecify",
-        "@maven//:org_slf4j_slf4j_api",
+        "@scip_lsp_maven//:com_sourcegraph_scip_semanticdb",
+        "@scip_lsp_maven//:commons_cli_commons_cli",
+        "@scip_lsp_maven//:commons_io_commons_io",
+        "@scip_lsp_maven//:org_jspecify_jspecify",
+        "@scip_lsp_maven//:org_slf4j_slf4j_api",
     ],
 )
 
