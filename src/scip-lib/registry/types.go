@@ -15,6 +15,7 @@ type PackageID string
 type Registry interface {
 	LoadConcurrency() int
 	SetDocumentLoadedCallback(func(*model.Document))
+	SetSymbolVisitedCallback(func(docPath string, info *model.SymbolInformation))
 	LoadIndex(indexReader io.ReadSeeker) error
 	LoadIndexFile(indexPath string) error
 	DidOpen(uri uri.URI, text string) error
