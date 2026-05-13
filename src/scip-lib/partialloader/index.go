@@ -18,6 +18,7 @@ import (
 // PartialIndex is a partial index of a SCIP index
 type PartialIndex interface {
 	SetDocumentLoadedCallback(func(*model.Document))
+	SetSymbolVisitedCallback(func(docPath string, info *model.SymbolInformation))
 	LoadIndex(indexPath string, indexReader scanner.ScipReader) error
 	LoadIndexFile(file string) error
 	LoadDocument(relativeDocPath string) (*model.Document, error)
@@ -58,6 +59,7 @@ type PartialLoadedIndex struct {
 	indexFolder      string
 	pool             *scanner.BufferPool
 	onDocumentLoaded func(*model.Document)
+	onSymbolVisited  func(docPath string, info *model.SymbolInformation)
 
 	// ImplementorsBySymbol maps abstract/interface symbol -> set of implementing symbols
 	implementorsMu       sync.RWMutex
@@ -75,6 +77,7 @@ func NewPartialLoadedIndex(indexFolder string) PartialIndex {
 		indexFolder:          indexFolder,
 		pool:                 scanner.NewBufferPool(1024, 12),
 		onDocumentLoaded:     func(*model.Document) {},
+		onSymbolVisited:      func(string, *model.SymbolInformation) {},
 		ImplementorsBySymbol: make(map[string]map[string]struct{}),
 	}
 }
@@ -82,6 +85,11 @@ func NewPartialLoadedIndex(indexFolder string) PartialIndex {
 // SetDocumentLoadedCallback sets the callback for when a document is loaded
 func (p *PartialLoadedIndex) SetDocumentLoadedCallback(callback func(*model.Document)) {
 	p.onDocumentLoaded = callback
+}
+
+// SetSymbolVisitedCallback sets the callback for when a symbol is visited during index scanning
+func (p *PartialLoadedIndex) SetSymbolVisitedCallback(callback func(docPath string, info *model.SymbolInformation)) {
+	p.onSymbolVisited = callback
 }
 
 // LoadIndexFile loads a SCIP index file into the PartialLoadedIndex
@@ -138,6 +146,24 @@ func (p *PartialLoadedIndex) LoadIndex(indexPath string, indexReader scanner.Sci
 	localDocToIndex := make(map[string]string)
 	localImplementorsBySymbol := make(map[string]map[string]struct{})
 
+	// Dispatch onSymbolVisited callbacks on a worker goroutine so the scanner's
+	// critical path is never blocked by consumer work. The channel is buffered
+	// to absorb short bursts; the worker is joined before LoadIndex returns so
+	// consumers see all events by the time the call completes.
+	type symbolEvent struct {
+		docPath string
+		info    *model.SymbolInformation
+	}
+	symbolCh := make(chan symbolEvent, 256)
+	var workerWg sync.WaitGroup
+	workerWg.Add(1)
+	go func() {
+		defer workerWg.Done()
+		for ev := range symbolCh {
+			p.onSymbolVisited(ev.docPath, ev.info)
+		}
+	}()
+
 	loadScanner := &scanner.IndexScannerImpl{
 		Pool: p.pool,
 		MatchSymbol: func(symbol []byte) bool {
@@ -178,6 +204,8 @@ func (p *PartialLoadedIndex) LoadIndex(indexPath string, indexReader scanner.Sci
 			if isNew {
 				localDocTreeNodes[docPath].nodes = append(localDocTreeNodes[docPath].nodes, leafNode)
 			}
+
+			symbolCh <- symbolEvent{docPath, modelInfo}
 		},
 		VisitDocument: func(doc *scip.Document) {
 			docPath := filepath.Clean(doc.RelativePath)
@@ -191,6 +219,8 @@ func (p *PartialLoadedIndex) LoadIndex(indexPath string, indexReader scanner.Sci
 
 	loadScanner.InitBuffers()
 	defer func() {
+		close(symbolCh)
+		workerWg.Wait()
 		p.modificationMu.Lock()
 		defer p.modificationMu.Unlock()
 		p.mergePrefixTree(localPrefixTree)

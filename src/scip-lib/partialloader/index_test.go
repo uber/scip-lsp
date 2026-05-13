@@ -411,6 +411,22 @@ func TestLoadIndexWithPreloadedDocument(t *testing.T) {
 	assert.Equal(t, docPath, foundDocPath)
 }
 
+func TestSetSymbolVisitedCallback(t *testing.T) {
+	index := NewPartialLoadedIndex("../testdata")
+
+	symbolCount := 0
+	index.SetSymbolVisitedCallback(func(docPath string, info *model.SymbolInformation) {
+		symbolCount++
+		assert.NotEmpty(t, docPath)
+		assert.NotNil(t, info)
+		assert.NotEmpty(t, info.Symbol)
+	})
+
+	err := index.LoadIndexFile(filepath.Join("../testdata", "index.scip"))
+	assert.NoError(t, err)
+	assert.Greater(t, symbolCount, 0, "Callback should be called for each symbol in the index")
+}
+
 // New tests for reverse implementors index
 func TestMergeImplementors(t *testing.T) {
 	idx := &PartialLoadedIndex{

@@ -47,6 +47,10 @@ func (p *partialScipRegistry) SetDocumentLoadedCallback(callback func(*model.Doc
 	p.Index.SetDocumentLoadedCallback(callback)
 }
 
+func (p *partialScipRegistry) SetSymbolVisitedCallback(callback func(docPath string, info *model.SymbolInformation)) {
+	p.Index.SetSymbolVisitedCallback(callback)
+}
+
 func (p *partialScipRegistry) DidOpen(uri uri.URI, text string) error {
 	relativePath := p.uriToRelativePath(uri)
 
