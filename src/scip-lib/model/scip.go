@@ -114,6 +114,14 @@ func ParseScipSymbol(sy string) (*scip.Symbol, error) {
 	return parsed, nil
 }
 
+// SymbolChild represents a child symbol of a class/interface/struct
+type SymbolChild struct {
+	Info       *SymbolInformation
+	Descriptor Descriptor
+	// Children contains nested children (e.g., method parameters)
+	Children []*SymbolChild
+}
+
 // ParseScipSymbolToDisplayName parses a symbol and return the displayName
 func ParseScipSymbolToDisplayName(symbolStr string) string {
 	symbol, err := scip.ParseSymbol(symbolStr)

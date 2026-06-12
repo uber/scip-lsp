@@ -32,6 +32,9 @@ type Registry interface {
 	Implementations(symbol string) ([]string, error)
 	// Hover returns the hover information for a given position, as well as it's occurrence
 	Hover(uri uri.URI, loc protocol.Position) (string, *model.Occurrence, error)
+	// GetSymbolChildren returns the first-level children of a symbol (fields, methods, etc.)
+	// For methods, it also includes their parameter children.
+	GetSymbolChildren(symbol string) ([]*model.SymbolChild, error)
 	// DocumentSymbols returns the document symbols for a given document
 	DocumentSymbols(uri uri.URI) ([]*model.SymbolOccurrence, error)
 	// Diagnostics returns the diagnostics for a given document

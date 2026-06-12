@@ -288,6 +288,11 @@ func (p *partialScipRegistry) Diagnostics(uri uri.URI) ([]*model.Diagnostic, err
 	return nil, errors.New("not implemented")
 }
 
+// GetSymbolChildren returns the first-level children of a symbol (fields, methods, etc.)
+func (p *partialScipRegistry) GetSymbolChildren(symbol string) ([]*model.SymbolChild, error) {
+	return p.Index.GetSymbolChildren(symbol)
+}
+
 func (p *partialScipRegistry) uriToRelativePath(uri uri.URI) string {
 	rel, err := filepath.Rel(p.WorkspaceRoot, uri.Filename())
 	if err != nil {

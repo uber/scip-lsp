@@ -24,6 +24,9 @@ type PartialIndex interface {
 	LoadDocument(relativeDocPath string) (*model.Document, error)
 	GetSymbolInformation(symbol string) (*model.SymbolInformation, string, error)
 	GetSymbolInformationFromDescriptors(descriptors []model.Descriptor, version string) (*model.SymbolInformation, string, error)
+	// GetSymbolChildren returns the first-level children of a symbol (fields, methods, etc.)
+	// For methods, it also includes their parameter children.
+	GetSymbolChildren(symbol string) ([]*model.SymbolChild, error)
 	References(symbol string) (map[string][]*model.Occurrence, error)
 	Implementations(symbol string) ([]string, error)
 	Tidy() error
@@ -443,6 +446,76 @@ func (p *PartialLoadedIndex) Implementations(symbol string) ([]string, error) {
 		res = append(res, s)
 	}
 	return res, nil
+}
+
+// GetSymbolChildren returns the first-level children of a symbol from the prefix tree.
+// For each child that is a method, it also includes the method's parameter children.
+func (p *PartialLoadedIndex) GetSymbolChildren(symbol string) ([]*model.SymbolChild, error) {
+	if scip.IsLocalSymbol(symbol) {
+		return nil, nil
+	}
+
+	p.prefixTreeMu.RLock()
+	defer p.prefixTreeMu.RUnlock()
+
+	node := p.PrefixTreeRoot.GetNode(symbol)
+	if node == nil {
+		return nil, nil
+	}
+
+	children := make([]*model.SymbolChild, 0, len(node.Children))
+	for desc, childNode := range node.Children {
+		child := &model.SymbolChild{
+			Descriptor: desc,
+		}
+
+		// Get symbol info from any available version
+		if childNode.SymbolVersions != nil {
+			for _, versionInfo := range childNode.SymbolVersions {
+				if versionInfo.Info != nil {
+					child.Info = versionInfo.Info
+					break
+				}
+			}
+		}
+
+		// For methods, get their parameter children
+		if desc.Suffix == scip.Descriptor_Method {
+			child.Children = p.getChildrenFromNode(childNode)
+		}
+
+		children = append(children, child)
+	}
+
+	return children, nil
+}
+
+// getChildrenFromNode extracts children from a tree node (helper for GetSymbolChildren)
+func (p *PartialLoadedIndex) getChildrenFromNode(node *SymbolPrefixTreeNode) []*model.SymbolChild {
+	if node == nil || len(node.Children) == 0 {
+		return nil
+	}
+
+	children := make([]*model.SymbolChild, 0, len(node.Children))
+	for desc, childNode := range node.Children {
+		child := &model.SymbolChild{
+			Descriptor: desc,
+		}
+
+		// Get symbol info from any available version
+		if childNode.SymbolVersions != nil {
+			for _, versionInfo := range childNode.SymbolVersions {
+				if versionInfo.Info != nil {
+					child.Info = versionInfo.Info
+					break
+				}
+			}
+		}
+
+		children = append(children, child)
+	}
+
+	return children
 }
 
 // Tidy prunes nodes for documents that were updated in the current revision
